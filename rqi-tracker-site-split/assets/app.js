@@ -1,373 +1,4 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RQI Trình theo dõi chất lượng nghiên cứu</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#0b0d10;--bg2:#111318;--bg3:#181c23;--border:#1f2430;--border2:#2a3040;--border3:#354055;--text:#dde1ec;--text2:#7e8799;--text3:#44505f;--accent:#4f74ff;--accent2:#3356e0;--accentg:rgba(79,116,255,.08);--green:#27c47e;--greeng:rgba(39,196,126,.1);--amber:#f0a020;--amberg:rgba(240,160,32,.1);--red:#e0404f;--redg:rgba(224,64,79,.1);--purple:#8b6fff;--teal:#18c49a;--mono:'DM Mono',monospace;--head:'Syne',sans-serif;--body:'DM Sans',sans-serif;--r:10px;--r2:14px}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--body);font-size:14px;line-height:1.5}
-button,input,select,textarea{font-family:var(--body)}
-::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-.app{display:grid;grid-template-columns:256px 1fr;grid-template-rows:52px 1fr;height:100vh;overflow:hidden}
-.topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border);background:var(--bg2);z-index:10;gap:12px}
-.sidebar{border-right:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;overflow:hidden}
-.main{overflow-y:auto;overflow-x:hidden}
-.logo{font-family:var(--head);font-weight:800;font-size:14px;letter-spacing:-.3px;display:flex;align-items:center;gap:10px;flex-shrink:0}
-.logo-pill{background:var(--accent);color:#fff;font-size:9px;font-family:var(--mono);font-weight:500;padding:3px 8px;border-radius:4px;letter-spacing:.8px}
-.topbar-center{display:flex;align-items:center;gap:5px;flex:1;overflow:hidden}
-.member-chip{display:flex;align-items:center;gap:5px;padding:4px 10px 4px 6px;border-radius:20px;border:1px solid var(--border2);cursor:pointer;transition:.12s;font-size:12px;color:var(--text2);background:transparent;white-space:nowrap}
-.member-chip:hover{background:var(--bg3);color:var(--text)}
-.member-chip.active{background:var(--accentg);border-color:var(--accent);color:var(--accent)}
-.m-av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
-.topbar-right{display:flex;gap:6px;align-items:center;flex-shrink:0}
-.btn{padding:6px 13px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:.12s;white-space:nowrap}
-.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}
-.btn-ghost:hover{background:var(--bg3);color:var(--text);border-color:var(--border3)}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{background:var(--accent2)}
-.btn-sm{padding:4px 10px;font-size:11px}
-.btn-danger{background:transparent;color:var(--red);border:1px solid rgba(224,64,79,.25)}
-.btn-danger:hover{background:var(--redg)}
-.btn-icon{width:28px;height:28px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:7px;font-size:14px}
-.sidebar-top{padding:14px 10px 8px}
-.sidebar-label{font-family:var(--mono);font-size:9px;letter-spacing:1.2px;color:var(--text3);text-transform:uppercase;margin-bottom:6px;padding:0 8px}
-.nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer;transition:.1s;color:var(--text2);font-size:13px;border:none;background:transparent;width:100%;text-align:left}
-.nav-item:hover{background:var(--bg3);color:var(--text)}
-.nav-item.active{background:var(--accentg);color:var(--accent);font-weight:500}
-.nav-badge{margin-left:auto;font-family:var(--mono);font-size:9px;background:var(--border2);padding:1px 6px;border-radius:8px;color:var(--text3)}
-.sidebar-divider{height:1px;background:var(--border);margin:8px 10px}
-.sidebar-scroll{flex:1;overflow-y:auto;padding:0 10px 12px}
-.proj-item{padding:8px 10px;border-radius:8px;cursor:pointer;transition:.1s;border:1px solid transparent;margin-bottom:3px}
-.proj-item:hover{background:var(--bg3);border-color:var(--border)}
-.proj-item.sel{background:var(--bg3);border-color:var(--border2)}
-.pj-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
-.pj-row{display:flex;align-items:center;gap:6px}
-.pj-type{font-size:9px;font-family:var(--mono);color:var(--text3)}
-.pj-rqi{font-family:var(--mono);font-size:10px;font-weight:500;margin-left:auto}
-.view{display:none;padding:24px 28px;min-height:100%}
-.view.active{display:block}
-.page-header{margin-bottom:22px}
-.page-title{font-family:var(--head);font-size:22px;font-weight:700;margin-bottom:4px}
-.page-sub{font-size:12px;color:var(--text2)}
-.metric-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
-.metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px 18px}
-.mc-label{font-family:var(--mono);font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
-.mc-value{font-family:var(--head);font-size:28px;font-weight:800;line-height:1;margin-bottom:3px}
-.mc-sub{font-size:11px;color:var(--text3)}
-.sec-label{font-family:var(--mono);font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);margin-bottom:12px}
-.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:10px;margin-bottom:22px}
-.proj-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px 18px;cursor:pointer;transition:.15s}
-.proj-card:hover{border-color:var(--border3);transform:translateY(-1px)}
-.card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
-.card-name{font-family:var(--head);font-size:14px;font-weight:700;color:var(--text);line-height:1.3;flex:1;margin-right:10px}
-.card-rqi{font-family:var(--mono);font-size:20px;font-weight:500;flex-shrink:0}
-.card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-.tag{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:3px;letter-spacing:.3px}
-.t-uiux{background:rgba(139,111,255,.15);color:var(--purple)}
-.t-uxr{background:rgba(24,196,154,.15);color:var(--teal)}
-.t-draft{background:rgba(68,80,95,.2);color:var(--text3)}
-.t-active{background:rgba(39,196,126,.12);color:var(--green)}
-.t-review{background:rgba(240,160,32,.12);color:var(--amber)}
-.t-done{background:rgba(79,116,255,.12);color:var(--accent)}
-.prog-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px}
-.prog-fill{height:100%;border-radius:2px;transition:width .4s ease}
-.card-foot{display:flex;justify-content:space-between;align-items:center}
-.card-meta{font-size:11px;color:var(--text3)}
-.trend-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px 20px;margin-bottom:20px}
-.trend-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.trend-title{font-family:var(--head);font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px}
-.trend-legend{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap}
-.tl-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
-.tl-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
-.cmp-sel{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:8px 12px;color:var(--text);font-size:13px;outline:none;appearance:none;cursor:pointer}
-.cmp-sel:focus{border-color:var(--accent)}
-.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.cmp-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px}
-.cmp-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.cbr-label{font-size:11px;color:var(--text2);width:100px;flex-shrink:0}
-.cbr-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
-.cbr-fill{height:100%;border-radius:3px;transition:.4s}
-.cbr-val{font-family:var(--mono);font-size:10px;color:var(--text3);width:34px;text-align:right;flex-shrink:0}
-.detail-header{display:flex;align-items:flex-start;gap:16px;margin-bottom:22px}
-.dh-nav{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
-.detail-title{font-family:var(--head);font-size:20px;font-weight:700;margin-bottom:6px;line-height:1.2}
-.detail-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
-.detail-obj{font-size:12px;color:var(--text3);line-height:1.6;max-width:520px;margin-top:6px}
-.rqi-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px 20px;text-align:center;flex-shrink:0;min-width:108px}
-.rqi-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);margin-bottom:5px}
-.rqi-num{font-family:var(--head);font-size:36px;font-weight:800;line-height:1}
-.rqi-grade{font-family:var(--mono);font-size:10px;margin-top:3px}
-.rqi-dod{font-size:10px;color:var(--text3);margin-top:6px}
-.detail-body{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px}
-.panel-title{font-family:var(--head);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:6px}
-.ptl{flex:1;height:1px;background:var(--border)}
-.full-col{grid-column:1/-1}
-.dod-item{display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;transition:.1s}
-.dod-item:hover{background:var(--bg3)}
-.dod-cb{width:15px;height:15px;border:1.5px solid var(--border2);border-radius:3px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:.12s}
-.dod-cb.chk{background:var(--green);border-color:var(--green)}
-.dod-cb.chk.core{background:var(--accent);border-color:var(--accent)}
-.dod-cb svg{display:none}.dod-cb.chk svg{display:block}
-.dod-text{font-size:11px;color:var(--text2);line-height:1.55;flex:1}
-.dod-text.chk{color:var(--text3);text-decoration:line-through;text-decoration-color:var(--border2)}
-.core-pill{font-family:var(--mono);font-size:8px;background:rgba(79,116,255,.12);color:var(--accent);padding:1px 5px;border-radius:2px;flex-shrink:0;margin-top:3px}
-.qual-item{padding:9px 10px;border-radius:8px;border:1px solid var(--border);margin-bottom:6px}
-.qual-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
-.qual-name{font-size:11px;font-weight:500;color:var(--text)}
-.stars{display:flex;gap:2px}
-.star{font-size:13px;cursor:pointer;color:var(--border3);transition:.1s;line-height:1}
-.star.on{color:var(--amber)}
-.qual-desc{font-size:10px;color:var(--text3);line-height:1.5}
-.gate-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:.1s;margin-bottom:6px}
-.gate-item:hover{background:var(--bg3)}
-.gate-num{width:24px;height:24px;border-radius:50%;background:var(--bg3);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:var(--text3);flex-shrink:0;transition:.12s}
-.gate-num.pass{background:var(--greeng);border-color:var(--green);color:var(--green)}
-.gate-info{flex:1}.gate-name{font-size:11px;font-weight:500;color:var(--text);margin-bottom:1px}
-.gate-desc{font-size:10px;color:var(--text3)}.gate-date{font-family:var(--mono);font-size:9px;color:var(--text3);flex-shrink:0}
-.rcr{margin-bottom:8px}.rcr-head{display:flex;justify-content:space-between;margin-bottom:3px}
-.rcr-lbl{font-size:10px;color:var(--text2)}.rcr-val{font-family:var(--mono);font-size:10px;color:var(--text3)}
-.rcr-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
-.rcr-fill{height:100%;border-radius:3px;transition:.3s}
-.adopt-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.adopt-label{font-size:12px;color:var(--text2);flex:1}
-.adopt-input{width:58px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;color:var(--text);font-family:var(--mono);font-size:12px;text-align:center;outline:none}
-.adopt-input:focus{border-color:var(--accent)}
-.adopt-hint{font-size:10px;color:var(--text3);line-height:1.5}
-.comment{display:flex;gap:9px;margin-bottom:12px}
-.c-av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
-.c-body{flex:1}
-.c-header{display:flex;align-items:center;gap:6px;margin-bottom:3px}
-.c-author{font-size:12px;font-weight:500;color:var(--text)}
-.c-time{font-size:10px;color:var(--text3);font-family:var(--mono)}
-.c-type{font-size:9px;font-family:var(--mono);padding:1px 5px;border-radius:2px}
-.ct-review{background:rgba(79,116,255,.12);color:var(--accent)}
-.ct-flag{background:rgba(224,64,79,.12);color:var(--red)}
-.ct-note{background:rgba(68,80,95,.2);color:var(--text3)}
-.c-text{font-size:12px;color:var(--text2);line-height:1.6;background:var(--bg3);padding:8px 10px;border-radius:6px;border:1px solid var(--border)}
-.c-input-row{display:flex;gap:8px;align-items:flex-start}
-.c-type-sel{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:6px 8px;color:var(--text2);font-size:11px;outline:none;cursor:pointer;flex-shrink:0}
-.c-ta{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:12px;resize:none;min-height:60px;outline:none;transition:.12s;line-height:1.55}
-.c-ta:focus{border-color:var(--accent)}
-.notes-ta{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:12px;resize:vertical;min-height:78px;outline:none;transition:.12s;line-height:1.6}
-.notes-ta:focus{border-color:var(--accent)}
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
-.modal-overlay.open{display:flex}
-.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:26px;width:500px;max-width:calc(100vw - 32px);max-height:85vh;overflow-y:auto}
-.modal-title{font-family:var(--head);font-size:17px;font-weight:700;margin-bottom:18px}
-.fg{margin-bottom:14px}
-.fl{font-size:11px;font-weight:500;color:var(--text2);margin-bottom:5px;display:block;font-family:var(--mono)}
-.fi{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 11px;color:var(--text);font-size:13px;outline:none;transition:.12s}
-.fi:focus{border-color:var(--accent)}
-.fs{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 11px;color:var(--text);font-size:13px;outline:none;appearance:none;cursor:pointer}
-.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.m-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
-.m-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);margin-bottom:6px}
-.m-name{flex:1;font-size:13px;color:var(--text)}.m-role{font-size:11px;color:var(--text3);font-family:var(--mono)}
-.empty{text-align:center;padding:52px 20px}
-.empty-icon{font-size:36px;opacity:.3;margin-bottom:12px}
-.empty-title{font-family:var(--head);font-size:17px;font-weight:700;color:var(--text2);margin-bottom:6px}
-.empty-sub{font-size:12px;color:var(--text3);margin-bottom:18px}
-.c-green{color:var(--green)}.c-accent{color:var(--accent)}.c-amber{color:var(--amber)}.c-red{color:var(--red)}
-.lbr-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
-.lbr-row:last-child{border-bottom:none}
-/* ── GLOSSARY PAGE ── */
-.gl-link{font-family:var(--mono);font-size:9px;color:var(--accent);text-decoration:none;letter-spacing:.3px;padding:1px 6px;border-radius:3px;border:1px solid rgba(79,116,255,.3);transition:.12s;white-space:nowrap;cursor:pointer}
-.gl-link:hover{background:rgba(79,116,255,.12);border-color:var(--accent)}
-.gl-group-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
-.gl-tab{padding:5px 13px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid var(--border2);color:var(--text2);background:transparent;transition:.12s;white-space:nowrap}
-.gl-tab:hover{background:var(--bg3);color:var(--text)}
-.gl-tab.on{color:#fff;border-color:transparent}
-.gl-item{border:1px solid var(--border);border-radius:var(--r2);margin-bottom:10px;overflow:hidden}
-.gl-item-header{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;transition:.1s;user-select:none}
-.gl-item-header:hover{background:var(--bg3)}
-.gl-item-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:500;flex-shrink:0;color:#fff}
-.gl-item-title{font-size:13px;font-weight:500;color:var(--text);flex:1}
-.gl-core-badge{font-family:var(--mono);font-size:8px;padding:1px 5px;border-radius:2px;background:rgba(79,116,255,.12);color:var(--accent);flex-shrink:0}
-.gl-chevron{font-size:11px;color:var(--text3);transition:.2s;flex-shrink:0}
-.gl-item.open .gl-chevron{transform:rotate(90deg)}
-.gl-item-body{display:none;padding:0 16px 16px;border-top:1px solid var(--border)}
-.gl-item.open .gl-item-body{display:block}
-.gl-why{background:var(--bg3);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 14px;margin:12px 0 10px;font-size:12px;color:var(--text2);line-height:1.65}
-.gl-why strong{color:var(--accent);font-size:11px;font-family:var(--mono);display:block;margin-bottom:4px;letter-spacing:.3px}
-.gl-steps{margin:0;padding:0;list-style:none}
-.gl-steps li{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2);line-height:1.6}
-.gl-steps li:last-child{border-bottom:none}
-.gl-steps li::before{content:"·";color:var(--text3);flex-shrink:0;font-size:16px;line-height:1.3}
-.gl-steps li strong{color:var(--text);font-weight:500}
-.gl-fail{margin-top:10px;padding:8px 12px;border-radius:7px;background:rgba(224,64,79,.06);border:1px solid rgba(224,64,79,.15);font-size:11px;color:var(--text2);line-height:1.55}
-.gl-fail::before{content:"⚠ Ngưỡng fail: ";color:var(--red);font-weight:500;font-family:var(--mono);font-size:10px}
-/* ── GATE SCORE / VERDICT SYSTEM ── */
-.verdict-banner{border-radius:var(--r2);padding:16px 20px;margin-bottom:18px;display:flex;align-items:center;gap:16px}
-.vb-pass-hi{background:rgba(39,196,126,.08);border:1.5px solid rgba(39,196,126,.3)}
-.vb-pass{background:rgba(79,116,255,.07);border:1.5px solid rgba(79,116,255,.25)}
-.vb-cond{background:rgba(240,160,32,.07);border:1.5px solid rgba(240,160,32,.3)}
-.vb-block{background:rgba(224,64,79,.07);border:1.5px solid rgba(224,64,79,.3)}
-.verdict-icon{font-size:28px;flex-shrink:0;line-height:1}
-.verdict-right{flex:1}
-.verdict-label{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:3px}
-.verdict-title{font-family:var(--head);font-size:16px;font-weight:700;margin-bottom:3px}
-.verdict-desc{font-size:11px;color:var(--text2);line-height:1.5}
-.score-cluster{display:flex;gap:10px;align-items:stretch;flex-shrink:0}
-.score-box{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;text-align:center;min-width:80px}
-.sb-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.7px;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
-.sb-val{font-family:var(--head);font-size:22px;font-weight:800;line-height:1}
-.sb-sub{font-size:9px;color:var(--text3);margin-top:2px}
-.hard-block-list{margin-top:10px}
-.hb-item{display:flex;align-items:flex-start;gap:7px;padding:5px 8px;border-radius:6px;background:rgba(224,64,79,.06);border:1px solid rgba(224,64,79,.15);margin-bottom:5px;font-size:11px;color:var(--text2);line-height:1.5}
-.hb-icon{font-size:12px;flex-shrink:0;margin-top:1px}
-.hb-ok{background:rgba(39,196,126,.05);border-color:rgba(39,196,126,.15)}
-.scoring-ref{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px 16px;margin-bottom:14px}
-.sr-title{font-family:var(--head);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
-.sr-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px}
-.sr-bar{flex:1;height:4px;border-radius:2px}
-.sr-range{font-family:var(--mono);font-size:9px;color:var(--text3);width:52px;flex-shrink:0}
-.sr-lbl{color:var(--text2);width:90px;flex-shrink:0}
-.card-verdict{display:inline-flex;align-items:center;gap:3px;font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;letter-spacing:.3px;flex-shrink:0}
-.cv-pass-hi{background:rgba(39,196,126,.12);color:var(--green)}
-.cv-pass{background:rgba(79,116,255,.1);color:var(--accent)}
-.cv-cond{background:rgba(240,160,32,.1);color:var(--amber)}
-.cv-block{background:rgba(224,64,79,.1);color:var(--red)}
-</style>
-</head>
-<body>
-<div class="app">
-
-<header class="topbar">
-  <div class="logo"><div class="logo-pill">RQI</div>Research Quality Tracker</div>
-  <div class="topbar-center" id="member-bar"></div>
-  <div class="topbar-right">
-    <button class="btn btn-ghost btn-sm" onclick="openImport()">↑ Nhập dữ liệu</button>
-    <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ CSV</button>
-    <button class="btn btn-ghost btn-sm" onclick="exportJSON()">⬇ JSON</button>
-    <button class="btn btn-ghost btn-sm btn-icon" onclick="openMembers()" title="Quản lý thành viên">👥</button>
-    <button class="btn btn-primary btn-sm" onclick="openNew()">+ Tạo nghiên cứu mới</button>
-  </div>
-</header>
-
-<aside class="sidebar">
-  <div class="sidebar-top">
-    <div class="sidebar-label">Điều hướng</div>
-    <button class="nav-item active" id="nav-dashboard" onclick="showView('dashboard',this)">
-      <span>◈</span> Tổng quan
-    </button>
-    <button class="nav-item" id="nav-all" onclick="showView('all',this)">
-      <span>◫</span> Tất cả nghiên cứu
-      <span class="nav-badge" id="badge-all">0</span>
-    </button>
-    <button class="nav-item" id="nav-compare" onclick="showView('compare',this)">
-      <span>⇄</span> So sánh
-    </button>
-    <button class="nav-item" id="nav-glossary" onclick="showView('glossary',this)">
-      <span>◎</span> DoD Glossary
-    </button>
-  </div>
-  <div class="sidebar-divider"></div>
-  <div class="sidebar-top" style="padding-top:0"><div class="sidebar-label">Gần đây</div></div>
-  <div class="sidebar-scroll" id="sidebar-list"></div>
-</aside>
-
-<main class="main">
-
-  <div class="view active" id="view-dashboard">
-    <div class="page-header">
-      <div class="page-title">Tổng quan nghiên cứu</div>
-      <div class="page-sub">Orchestrated RQI Framework · <span id="dash-ctx">Tất cả thành viên</span></div>    </div>
-    <div class="metric-row">
-      <div class="metric-card"><div class="mc-label" id="m-rqi-label">Gate Score TB</div><div class="mc-value" id="m-rqi">—</div><div class="mc-sub" id="m-rqi-sub">Ngưỡng pass ≥ 70%</div></div>
-      <div class="metric-card"><div class="mc-label">Tỉ lệ đạt</div><div class="mc-value c-green" id="m-pass">—</div><div class="mc-sub">Nghiên cứu đủ điều kiện bàn giao</div></div>
-      <div class="metric-card"><div class="mc-label">Đang thực hiện</div><div class="mc-value c-accent" id="m-active">0</div><div class="mc-sub">Đang tiến hành</div></div>
-      <div class="metric-card"><div class="mc-label">DoD Trung bình</div><div class="mc-value" id="m-dod">—</div><div class="mc-sub">Mức hoàn thành checklist</div></div>
-    </div>
-    <div class="trend-card">
-      <div class="trend-head">
-        <div class="trend-title">Xu hướng RQI theo thời gian</div>
-        <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">Sắp xếp theo ngày tạo</div>
-      </div>
-      <svg id="trend-svg" viewBox="0 0 760 130" style="width:100%;height:130px" preserveAspectRatio="none"></svg>
-      <div class="trend-legend" id="trend-legend"></div>
-    </div>
-    <div class="sec-label">Nghiên cứu gần đây</div>
-    <div class="card-grid" id="dash-cards"></div>
-  </div>
-
-  <div class="view" id="view-all">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px">
-      <div><div class="page-title">Tất cả nghiên cứu</div><div class="page-sub" id="all-sub">Hiển thị tất cả nghiên cứu</div></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <select class="cmp-sel" style="width:130px;font-size:11px" id="f-type" onchange="renderAll()"><option value="">Tất cả loại</option><option value="uiux">UX/UI Designer</option><option value="uxr">Strategic Researcher</option></select>
-        <select class="cmp-sel" style="width:118px;font-size:11px" id="f-status" onchange="renderAll()"><option value="">Tất cả trạng thái</option><option value="draft">Nháp</option><option value="active">Đang thực hiện</option><option value="review">Đang review</option><option value="done">Hoàn thành</option></select>
-        <select class="cmp-sel" style="width:128px;font-size:11px" id="f-member" onchange="renderAll()"><option value="">Tất cả thành viên</option></select>
-      </div>
-    </div>
-    <div class="card-grid" id="all-cards"></div>
-  </div>
-
-  <div class="view" id="view-compare">
-    <div class="page-header"><div class="page-title">So sánh chất lượng</div><div class="page-sub">So sánh RQI và DoD giữa các nghiên cứu</div></div>
-    <div class="cmp-grid" style="margin-bottom:16px">
-      <div><div class="sec-label" style="margin-bottom:6px">Nghiên cứu A</div><select class="cmp-sel" id="cmp-a" onchange="renderCompare()"></select></div>
-      <div><div class="sec-label" style="margin-bottom:6px">Nghiên cứu B</div><select class="cmp-sel" id="cmp-b" onchange="renderCompare()"></select></div>
-    </div>
-    <div id="compare-body"></div>
-    <div style="margin-top:24px">
-      <div class="sec-label" style="margin-bottom:12px">Bảng xếp hạng RQI nhóm</div>
-      <div class="panel" id="leaderboard"></div>
-    </div>
-  </div>
-
-  <div class="view" id="view-detail"><div id="detail-content"></div></div>
-  <div class="view" id="view-glossary"><div id="glossary-content"></div></div>
-</main>
-</div>
-
-<!-- MODAL NEW -->
-<div class="modal-overlay" id="modal-new">
-  <div class="modal">
-    <div class="modal-title">Tạo nghiên cứu mới</div>
-    <div class="fg"><label class="fl">Tên dự án nghiên cứu *</label><input class="fi" id="fn-name" placeholder="VD: Policy Usability Test — Sản phẩm Vay Q3 2025"/></div>
-    <div class="frow">
-      <div class="fg"><label class="fl">Loại vai trò *</label><select class="fs" id="fn-role" onchange="syncGroups()"><option value="uiux">UX/UI Designer</option><option value="uxr">Strategic Researcher</option></select></div>
-      <div class="fg"><label class="fl">Nhóm nghiên cứu *</label><select class="fs" id="fn-group"></select></div>
-    </div>
-    <div class="frow">
-      <div class="fg"><label class="fl">Trạng thái</label><select class="fs" id="fn-status"><option value="draft">Nháp</option><option value="active" selected>Active</option><option value="review">In Review</option><option value="done">Done</option></select></div>
-      <div class="fg"><label class="fl">Ngày bắt đầu</label><input class="fi" type="date" id="fn-date"/></div>
-    </div>
-    <div class="fg"><label class="fl">Người phụ trách</label><select class="fs" id="fn-owner"><option value="">— Chưa phân công —</option></select></div>
-    <div class="fg"><label class="fl">Mục tiêu nghiên cứu</label><textarea class="notes-ta" id="fn-obj" placeholder="Mục tiêu nghiên cứu..." style="min-height:60px"></textarea></div>
-    <div class="m-actions"><button class="btn btn-ghost" onclick="closeModals()">Hủy</button><button class="btn btn-primary" onclick="createProject()">Tạo mới</button></div>
-  </div>
-</div>
-
-<!-- MODAL MEMBERS -->
-<div class="modal-overlay" id="modal-members">
-  <div class="modal">
-    <div class="modal-title">Thành viên nhóm</div>
-    <div id="member-list-ui"></div>
-    <div class="frow" style="margin-bottom:10px">
-      <input class="fi" id="nm-name" placeholder="Tên thành viên"/>
-      <input class="fi" id="nm-role" placeholder="Role (VD: UX Designer)"/>
-    </div>
-    <div class="m-actions"><button class="btn btn-ghost" onclick="closeModals()">Đóng</button><button class="btn btn-primary" onclick="addMember()">Thêm thành viên</button></div>
-  </div>
-</div>
-
-<!-- MODAL IMPORT -->
-<div class="modal-overlay" id="modal-import">
-  <div class="modal">
-    <div class="modal-title">Nhập dữ liệu JSON</div>
-    <div class="fg"><label class="fl">Dán dữ liệu JSON (xuất từ công cụ này)</label><textarea class="notes-ta" id="import-ta" placeholder='[{"id":"p1234",...}]' style="min-height:140px;font-family:var(--mono);font-size:11px"></textarea></div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:14px">Dữ liệu sẽ được merge. Trùng ID sẽ được bỏ qua.</div>
-    <div class="m-actions"><button class="btn btn-ghost" onclick="closeModals()">Huỷ</button><button class="btn btn-primary" onclick="doImport()">Nhập</button></div>
-  </div>
-</div>
-
-<script>
-const MCOLORS=['#4f74ff','#27c47e','#f0a020','#e0404f','#8b6fff','#18c49a','#e05090','#f06030'];
+const MCOLORS=['#FFC709','#27c47e','#f0a020','#e0404f','#8b6fff','#18c49a','#e05090','#f06030'];
 const GATES=[
   {id:'g1',name:'Briefing trước nghiên cứu',desc:'Câu hỏi nghiên cứu, phương pháp, kế hoạch mẫu & phê duyệt stakeholder TRƯỚC khi ra thực địa'},
   {id:'g2',name:'Kiểm tra giữa nghiên cứu',desc:'Xem xét độ đủ mẫu, chủ đề ban đầu, gắn cờ sai lệch sau 40–50% công việc thực địa'},
@@ -413,7 +44,7 @@ const GROUPS={
 
     // ── B. NGHIÊN CỨU DỮ LIỆU & PHÂN TÍCH ───────────────────
     // Sub-methods: Analytics review · Heatmap/Session · A/B testing · Funnel analysis
-    {id:'data-analytics',name:'Nghiên cứu dữ liệu & phân tích',color:'#4f74ff',
+    {id:'data-analytics',name:'Nghiên cứu dữ liệu & phân tích',color:'#FFC709',
      dod:[
        {id:'da1',text:'Tracking plan được document trước khi thu thập: event, property, trigger, owner, tool',core:true},
        {id:'da2',text:'Baseline metrics thiết lập TRƯỚC khi chạy bất kỳ test nào — không đo sau rồi so sánh ngược',core:true},
@@ -538,7 +169,7 @@ const GROUPS={
 
     // ── 5. NGHIÊN CỨU ĐO LƯỜNG TRẢI NGHIỆM (XM Research) ────
     // Sub-methods: NPS/CSAT/CES · Longitudinal study · Exit/Churn research
-    {id:'xm-measure',name:'Nghiên cứu đo lường XM',color:'#4f74ff',
+    {id:'xm-measure',name:'Nghiên cứu đo lường XM',color:'#FFC709',
      dod:[
        {id:'xm1',text:'Survey instrument validated: không có leading/double-barreled questions, đã pilot test ≥5 người',core:true},
        {id:'xm2',text:'Baseline NPS/CSAT/CES thiết lập với sample representative đủ segment quan trọng',core:true},
@@ -909,27 +540,6 @@ function renderDetail(){
       </div>
     </div>
 
-    <!-- HARD BLOCK CONDITIONS -->
-    <div class="scoring-ref" style="margin-bottom:14px">
-      <div class="sr-title">Điều kiện bắt buộc — tất cả phải đạt trước khi bàn giao</div>
-      <div class="hard-block-list">
-        ${blocks.map(b=>`<div class="hb-item ${b.pass?'hb-ok':''}"><span class="hb-icon">${b.pass?'✓':'✗'}</span><span>${b.label}</span></div>`).join('')}
-      </div>
-    </div>
-
-    <!-- SCORING REFERENCE -->
-    <div class="scoring-ref">
-      <div class="sr-title">Bảng quy cách chấm điểm</div>
-      <div class="sr-row"><div class="sr-range" style="color:var(--green)">≥ 85%</div><div class="sr-bar" style="background:var(--green);width:85%"></div><div class="sr-lbl" style="color:var(--green)">Xuất sắc — Đạt</div></div>
-      <div class="sr-row"><div class="sr-range" style="color:var(--accent)">70–84%</div><div class="sr-bar" style="background:var(--accent);width:70%"></div><div class="sr-lbl" style="color:var(--accent)">Đạt — Có ghi chú</div></div>
-      <div class="sr-row"><div class="sr-range" style="color:var(--amber)">55–69%</div><div class="sr-bar" style="background:var(--amber);width:55%"></div><div class="sr-lbl" style="color:var(--amber)">Có điều kiện — Cần sửa</div></div>
-      <div class="sr-row"><div class="sr-range" style="color:var(--red)">< 55%</div><div class="sr-bar" style="background:var(--red);width:30%"></div><div class="sr-lbl" style="color:var(--red)">Bị chặn — Nộp lại</div></div>
-      <div style="margin-top:8px;font-size:10px;color:var(--text3);line-height:1.6">
-        Gate Score = Điểm DoD ×60% + Đánh giá chất lượng ×40% &nbsp;·&nbsp; Full RQI = Gate Score ×70% + Tỉ lệ áp dụng ×30%<br>
-        Gate Score dùng cho hội đồng tại thời điểm bàn giao. Full RQI theo dõi hậu kiểm sau 4–6 tuần.
-      </div>
-    </div>
-
     <div class="detail-body">
       <div class="panel"><div class="panel-title">Tiêu chí hoàn thành (DoD) <span class="ptl"></span><span class="gl-link" onclick="openGlossary('${p.groupId}','${p.roleType}')">Xem giải nghĩa →</span><span style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-left:8px">Core ${dodPctCore}% · All ${d}%</span></div>${dodH}</div>
       <div style="display:flex;flex-direction:column;gap:12px">
@@ -952,6 +562,29 @@ function renderDetail(){
           </div>
           <div class="adopt-row"><div class="adopt-label">Tỉ lệ áp dụng % <span style="font-size:10px;color:var(--text3)">(nhập sau khi bàn giao)</span></div>
             <input class="adopt-input" type="number" min="0" max="100" value="${adopt}" onchange="tAdopt(this.value)"/><span style="font-size:11px;color:var(--text3)">%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="scoring-row">
+        <!-- HARD BLOCK CONDITIONS -->
+        <div class="scoring-ref">
+          <div class="sr-title">Điều kiện bắt buộc — tất cả phải đạt trước khi bàn giao</div>
+          <div class="hard-block-list">
+            ${blocks.map(b=>`<div class="hb-item ${b.pass?'hb-ok':''}"><span class="hb-icon">${b.pass?'✓':'✗'}</span><span>${b.label}</span></div>`).join('')}
+          </div>
+        </div>
+
+        <!-- SCORING REFERENCE -->
+        <div class="scoring-ref">
+          <div class="sr-title">Bảng quy cách chấm điểm</div>
+          <div class="sr-row"><div class="sr-range" style="color:var(--green)">≥ 85%</div><div class="sr-bar" style="background:var(--green);width:85%"></div><div class="sr-lbl" style="color:var(--green)">Xuất sắc — Đạt</div></div>
+          <div class="sr-row"><div class="sr-range" style="color:var(--accent)">70–84%</div><div class="sr-bar" style="background:var(--accent);width:70%"></div><div class="sr-lbl" style="color:var(--accent)">Đạt — Có ghi chú</div></div>
+          <div class="sr-row"><div class="sr-range" style="color:var(--amber)">55–69%</div><div class="sr-bar" style="background:var(--amber);width:55%"></div><div class="sr-lbl" style="color:var(--amber)">Có điều kiện — Cần sửa</div></div>
+          <div class="sr-row"><div class="sr-range" style="color:var(--red)">< 55%</div><div class="sr-bar" style="background:var(--red);width:30%"></div><div class="sr-lbl" style="color:var(--red)">Bị chặn — Nộp lại</div></div>
+          <div style="margin-top:8px;font-size:10px;color:var(--text3);line-height:1.6">
+            Gate Score = Điểm DoD ×60% + Đánh giá chất lượng ×40% &nbsp;·&nbsp; Full RQI = Gate Score ×70% + Tỉ lệ áp dụng ×30%<br>
+            Gate Score dùng cho hội đồng tại thời điểm bàn giao. Full RQI theo dõi hậu kiểm sau 4–6 tuần.
           </div>
         </div>
       </div>
@@ -1195,6 +828,20 @@ function openGlossary(groupId, roleType) {
 }
 
 function renderGlossary(activeGroupId, activeRoleType) {
+  function hexToRgb(hex){
+    const h=hex.replace('#','').trim();
+    if(h.length!==6) return null;
+    const n=parseInt(h,16);
+    if(Number.isNaN(n)) return null;
+    return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};
+  }
+  function contrastTextColor(bg){
+    const rgb=hexToRgb(bg);
+    if(!rgb) return '#fff';
+    const y=(rgb.r*299 + rgb.g*587 + rgb.b*114)/1000;
+    return y>=160 ? '#000' : '#fff';
+  }
+
   // Build all groups list
   const allGroups = [
     ...GROUPS.uiux.map(g=>({...g, roleType:'uiux'})),
@@ -1207,7 +854,8 @@ function renderGlossary(activeGroupId, activeRoleType) {
   const tabsHTML = allGroups.map(g => {
     const isOn = g.id === curGroupId;
     const trackLbl = g.roleType === 'uiux' ? 'UX/UI' : 'Strategic';
-    return `<button class="gl-tab${isOn?' on':''}" style="${isOn?`background:${g.color};border-color:${g.color};`:''}color:${isOn?'#fff':''}" onclick="renderGlossary('${g.id}','${g.roleType}')">${g.name}</button>`;
+    const onColor=isOn ? contrastTextColor(g.color) : '';
+    return `<button class="gl-tab${isOn?' on':''}" style="${isOn?`background:${g.color};border-color:${g.color};`:''}color:${onColor}" onclick="renderGlossary('${g.id}','${g.roleType}')">${g.name}</button>`;
   }).join('');
 
   // Group content
@@ -1217,13 +865,14 @@ function renderGlossary(activeGroupId, activeRoleType) {
   const itemsHTML = groupDod.map((dodItem, idx) => {
     const gloss = glossItems.find(x=>x.id===dodItem.id);
     const numColor = dodItem.core ? 'var(--accent)' : 'var(--border3)';
+    const numTextColor = dodItem.core ? '#000' : '#fff';
     const stepsHTML = gloss ? gloss.steps.map(s=>`<li><strong>${s.k}:</strong> ${s.v}</li>`).join('') : '';
     const failHTML = gloss?.fail ? `<div class="gl-fail">${gloss.fail}</div>` : '';
     const whyHTML = gloss?.why ? `<div class="gl-why"><strong>Tại sao item này tồn tại?</strong>${gloss.why}</div>` : '';
 
     return `<div class="gl-item" id="gl-${dodItem.id}">
       <div class="gl-item-header" onclick="toggleGlItem('${dodItem.id}')">
-        <div class="gl-item-num" style="background:${numColor}">${idx+1}</div>
+        <div class="gl-item-num" style="background:${numColor};color:${numTextColor}">${idx+1}</div>
         <div class="gl-item-title">${dodItem.text}</div>
         ${dodItem.core ? '<div class="gl-core-badge">CORE</div>' : ''}
         <div class="gl-chevron">▶</div>
@@ -1283,9 +932,5 @@ function toggleGlItem(id) {
   el.classList.toggle('open');
 }
 
-
-
 load();syncGroups();renderMemberBar();renderDash();
-</script>
-</body>
-</html>
+

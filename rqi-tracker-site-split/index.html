@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RQI Trình theo dõi chất lượng nghiên cứu</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/styles.css">
+</head>
+<body>
+<div class="app">
+
+<header class="topbar">
+  <div class="logo"><div class="logo-pill">RQI</div>Research Quality Tracker</div>
+  <div class="topbar-center" id="member-bar"></div>
+  <div class="topbar-right">
+    <button class="btn btn-ghost btn-sm" onclick="openImport()">↑ Nhập dữ liệu</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportJSON()">⬇ JSON</button>
+    <button class="btn btn-ghost btn-sm btn-icon" onclick="openMembers()" title="Quản lý thành viên">👥</button>
+    <button class="btn btn-primary btn-sm" onclick="openNew()">+ Tạo nghiên cứu mới</button>
+  </div>
+</header>
+
+<aside class="sidebar">
+  <div class="sidebar-top">
+    <div class="sidebar-label">Điều hướng</div>
+    <button class="nav-item active" id="nav-dashboard" onclick="showView('dashboard',this)">
+      <span>◈</span> Tổng quan
+    </button>
+    <button class="nav-item" id="nav-all" onclick="showView('all',this)">
+      <span>◫</span> Tất cả nghiên cứu
+      <span class="nav-badge" id="badge-all">0</span>
+    </button>
+    <button class="nav-item" id="nav-compare" onclick="showView('compare',this)">
+      <span>⇄</span> So sánh
+    </button>
+    <button class="nav-item" id="nav-glossary" onclick="showView('glossary',this)">
+      <span>◎</span> DoD Glossary
+    </button>
+  </div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-top" style="padding-top:0"><div class="sidebar-label">Gần đây</div></div>
+  <div class="sidebar-scroll" id="sidebar-list"></div>
+</aside>
+
+<main class="main">
+
+  <div class="view active" id="view-dashboard">
+    <div class="page-header">
+      <div class="page-title">Tổng quan nghiên cứu</div>
+      <div class="page-sub">Orchestrated RQI Framework · <span id="dash-ctx">Tất cả thành viên</span></div>    </div>
+    <div class="metric-row">
+      <div class="metric-card"><div class="mc-label" id="m-rqi-label">Gate Score TB</div><div class="mc-value" id="m-rqi">—</div><div class="mc-sub" id="m-rqi-sub">Ngưỡng pass ≥ 70%</div></div>
+      <div class="metric-card"><div class="mc-label">Tỉ lệ đạt</div><div class="mc-value c-green" id="m-pass">—</div><div class="mc-sub">Nghiên cứu đủ điều kiện bàn giao</div></div>
+      <div class="metric-card"><div class="mc-label">Đang thực hiện</div><div class="mc-value c-accent" id="m-active">0</div><div class="mc-sub">Đang tiến hành</div></div>
+      <div class="metric-card"><div class="mc-label">DoD Trung bình</div><div class="mc-value" id="m-dod">—</div><div class="mc-sub">Mức hoàn thành checklist</div></div>
+    </div>
+    <div class="trend-card">
+      <div class="trend-head">
+        <div class="trend-title">Xu hướng RQI theo thời gian</div>
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">Sắp xếp theo ngày tạo</div>
+      </div>
+      <svg id="trend-svg" viewBox="0 0 760 130" style="width:100%;height:130px" preserveAspectRatio="none"></svg>
+      <div class="trend-legend" id="trend-legend"></div>
+    </div>
+    <div class="sec-label">Nghiên cứu gần đây</div>
+    <div class="card-grid" id="dash-cards"></div>
+  </div>
+
+  <div class="view" id="view-all">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px">
+      <div><div class="page-title">Tất cả nghiên cứu</div><div class="page-sub" id="all-sub">Hiển thị tất cả nghiên cứu</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select class="cmp-sel" style="width:130px;font-size:11px" id="f-type" onchange="renderAll()"><option value="">Tất cả loại</option><option value="uiux">UX/UI Designer</option><option value="uxr">Strategic Researcher</option></select>
+        <select class="cmp-sel" style="width:118px;font-size:11px" id="f-status" onchange="renderAll()"><option value="">Tất cả trạng thái</option><option value="draft">Nháp</option><option value="active">Đang thực hiện</option><option value="review">Đang review</option><option value="done">Hoàn thành</option></select>
+        <select class="cmp-sel" style="width:128px;font-size:11px" id="f-member" onchange="renderAll()"><option value="">Tất cả thành viên</option></select>
+      </div>
+    </div>
+    <div class="card-grid" id="all-cards"></div>
+  </div>
+
+  <div class="view" id="view-compare">
+    <div class="page-header"><div class="page-title">So sánh chất lượng</div><div class="page-sub">So sánh RQI và DoD giữa các nghiên cứu</div></div>
+    <div class="cmp-grid" style="margin-bottom:16px">
+      <div><div class="sec-label" style="margin-bottom:6px">Nghiên cứu A</div><select class="cmp-sel" id="cmp-a" onchange="renderCompare()"></select></div>
+      <div><div class="sec-label" style="margin-bottom:6px">Nghiên cứu B</div><select class="cmp-sel" id="cmp-b" onchange="renderCompare()"></select></div>
+    </div>
+    <div id="compare-body"></div>
+    <div style="margin-top:24px">
+      <div class="sec-label" style="margin-bottom:12px">Bảng xếp hạng RQI nhóm</div>
+      <div class="panel" id="leaderboard"></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-detail"><div id="detail-content"></div></div>
+  <div class="view" id="view-glossary"><div id="glossary-content"></div></div>
+</main>
+</div>
+
+<!-- MODAL NEW -->
+<div class="modal-overlay" id="modal-new">
+  <div class="modal">
+    <div class="modal-title">Tạo nghiên cứu mới</div>
+    <div class="fg"><label class="fl">Tên dự án nghiên cứu *</label><input class="fi" id="fn-name" placeholder="VD: Policy Usability Test — Sản phẩm Vay Q3 2025"/></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Loại vai trò *</label><select class="fs" id="fn-role" onchange="syncGroups()"><option value="uiux">UX/UI Designer</option><option value="uxr">Strategic Researcher</option></select></div>
+      <div class="fg"><label class="fl">Nhóm nghiên cứu *</label><select class="fs" id="fn-group"></select></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Trạng thái</label><select class="fs" id="fn-status"><option value="draft">Nháp</option><option value="active" selected>Active</option><option value="review">In Review</option><option value="done">Done</option></select></div>
+      <div class="fg"><label class="fl">Ngày bắt đầu</label><input class="fi" type="date" id="fn-date"/></div>
+    </div>
+    <div class="fg"><label class="fl">Người phụ trách</label><select class="fs" id="fn-owner"><option value="">— Chưa phân công —</option></select></div>
+    <div class="fg"><label class="fl">Mục tiêu nghiên cứu</label><textarea class="notes-ta" id="fn-obj" placeholder="Mục tiêu nghiên cứu..." style="min-height:60px"></textarea></div>
+    <div class="m-actions"><button class="btn btn-ghost" onclick="closeModals()">Hủy</button><button class="btn btn-primary" onclick="createProject()">Tạo mới</button></div>
+  </div>
+</div>
+
+<!-- MODAL MEMBERS -->
+<div class="modal-overlay" id="modal-members">
+  <div class="modal">
+    <div class="modal-title">Thành viên nhóm</div>
+    <div id="member-list-ui"></div>
+    <div class="frow" style="margin-bottom:10px">
+      <input class="fi" id="nm-name" placeholder="Tên thành viên"/>
+      <input class="fi" id="nm-role" placeholder="Role (VD: UX Designer)"/>
+    </div>
+    <div class="m-actions"><button class="btn btn-ghost" onclick="closeModals()">Đóng</button><button class="btn btn-primary" onclick="addMember()">Thêm thành viên</button></div>
+  </div>
+</div>
+
+<!-- MODAL IMPORT -->
+<div class="modal-overlay" id="modal-import">
+  <div class="modal">
+    <div class="modal-title">Nhập dữ liệu JSON</div>
+    <div class="fg"><label class="fl">Dán dữ liệu JSON (xuất từ công cụ này)</label><textarea class="notes-ta" id="import-ta" placeholder='[{"id":"p1234",...}]' style="min-height:140px;font-family:var(--mono);font-size:11px"></textarea></div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:14px">Dữ liệu sẽ được merge. Trùng ID sẽ được bỏ qua.</div>
+    <div class="m-actions"><button class="btn btn-ghost" onclick="closeModals()">Huỷ</button><button class="btn btn-primary" onclick="doImport()">Nhập</button></div>
+  </div>
+</div>
+
+<script src="./assets/app.js"></script>
+</body>
+</html>
