@@ -211,8 +211,33 @@ const GROUPS={
 
 let S={projects:[],members:[],filterMember:'',cur:null,view:'dashboard'};
 
-function load(){try{S.projects=JSON.parse(localStorage.getItem('rqiv2-p')||'[]')}catch(e){S.projects=[]}try{S.members=JSON.parse(localStorage.getItem('rqiv2-m')||'[]')}catch(e){S.members=[]}}
-function save(){localStorage.setItem('rqiv2-p',JSON.stringify(S.projects));localStorage.setItem('rqiv2-m',JSON.stringify(S.members))}
+async function load(){
+  try{
+    const r=await fetch('/api/data',{credentials:'include'});
+    if(!r.ok) throw new Error('load failed');
+    const j=await r.json();
+    const p=j?.payload||{};
+    S.projects=Array.isArray(p.projects)?p.projects:[];
+    S.members=Array.isArray(p.members)?p.members:[];
+  } catch(e){
+    S.projects=[];S.members=[];
+  }
+}
+
+let _saveTimer=null;
+async function save(){
+  if(_saveTimer) clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(async()=>{
+    try{
+      await fetch('/api/data',{
+        method:'PUT',
+        headers:{'content-type':'application/json'},
+        credentials:'include',
+        body:JSON.stringify({payload:{projects:S.projects,members:S.members}})
+      });
+    } catch(e){}
+  },250);
+}
 function gd(p){return(GROUPS[p.roleType]||[]).find(g=>g.id===p.groupId)}
 
 // ── GATE SCORE (Trước bàn giao — dùng cho hội đồng) ──────────
@@ -314,7 +339,7 @@ function renderMemberBar(){
     const col=MCOLORS[i%MCOLORS.length];
     const init=m.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     return`<button class="member-chip${S.filterMember===m.id?' active':''}" onclick="toggleFilter('${m.id}')">
-      <div class="m-av" style="background:${col};width:18px;height:18px;font-size:8px">${init}</div>${m.name.split(' ')[0]}</button>`;
+      <div class="m-av" style="background:${col};width:18px;height:18px;font-size:14px">${init}</div>${m.name.split(' ')[0]}</button>`;
   }).join('');
 }
 
@@ -334,7 +359,7 @@ function renderSidebar(){
     const gs=gateScore(p);const v=verdict(p);const m=mb(p.ownerId);const col=m?mc(p.ownerId):'';const init=m?mi(p.ownerId):'';
     return`<div class="proj-item${S.cur?.id===p.id?' sel':''}" onclick="showDetail('${p.id}')">
       <div class="pj-name">${p.name}</div>
-      <div class="pj-row"><span class="pj-type">${p.roleType==='uiux'?'UX/UI':'CHIẾN LƯỢC'}</span>${m?`<div class="m-av" style="background:${col};width:14px;height:14px;font-size:6px">${init}</div>`:''}<span class="pj-rqi" style="color:${v.color}">${gs}%</span><span style="font-size:9px">${v.icon}</span></div>
+      <div class="pj-row"><span class="pj-type">${p.roleType==='uiux'?'UX/UI':'CHIẾN LƯỢC'}</span>${m?`<div class="m-av" style="background:${col};width:14px;height:14px;font-size:14px">${init}</div>`:''}<span class="pj-rqi" style="color:${v.color}">${gs}%</span><span style="font-size:14px">${v.icon}</span></div>
     </div>`;
   }).join('');
 }
@@ -358,14 +383,14 @@ function projCard(p){
       </div>
       <div style="text-align:right;flex-shrink:0;margin-left:10px">
         <div style="font-family:var(--mono);font-size:18px;font-weight:500;color:${v.color}">${gs}%</div>
-        <div style="font-size:9px;color:var(--text3);font-family:var(--mono)">Gate</div>
+        <div style="font-size:14px;color:var(--text3);font-family:var(--mono)">Gate</div>
       </div>
     </div>
-    <div style="font-size:10px;color:var(--text3);margin:8px 0 6px">${g?.name||''}</div>
+    <div style="font-size:14px;color:var(--text3);margin:8px 0 6px">${g?.name||''}</div>
     <div class="prog-bar"><div class="prog-fill" style="width:${d}%;background:${col}"></div></div>
     <div class="card-foot">
       <div class="card-meta">DoD ${d}% · RQI ${r}%${cc?` · 💬 ${cc} bình luận`:''}</div>
-      <div style="display:flex;align-items:center;gap:6px">${m?`<div class="m-av" style="background:${mc2};width:18px;height:18px;font-size:7px">${mi2}</div>`:''}<div class="card-meta" style="font-family:var(--mono)">${p.startDate||'—'}</div></div>
+      <div style="display:flex;align-items:center;gap:6px">${m?`<div class="m-av" style="background:${mc2};width:18px;height:18px;font-size:14px">${mi2}</div>`:''}<div class="card-meta" style="font-family:var(--mono)">${p.startDate||'—'}</div></div>
     </div></div>`;
 }
 
@@ -376,8 +401,10 @@ function renderDash(){
   const avd=ps.length?Math.round(ps.map(dod).reduce((a,b)=>a+b,0)/ps.length):null;
   const passCount=ps.filter(p=>verdict(p).key!=='block').length;
 
-  document.getElementById('m-total').textContent=ps.length;
-  document.getElementById('m-active').textContent=ps.filter(p=>p.status==='active').length;
+  const totalEl=document.getElementById('m-total');
+  if(totalEl) totalEl.textContent=ps.length;
+  const activeEl=document.getElementById('m-active');
+  if(activeEl) activeEl.textContent=ps.filter(p=>p.status==='active').length;
 
   const gsEl=document.getElementById('m-rqi');
   if(avgGs!==null){
@@ -401,7 +428,7 @@ function renderDash(){
 
 function renderTrend(ps){
   const svg=document.getElementById('trend-svg');const leg=document.getElementById('trend-legend');
-  if(!ps.length){svg.innerHTML=`<text x="380" y="65" text-anchor="middle" fill="#44505f" font-size="12" font-family="DM Sans">Chưa có data</text>`;leg.innerHTML='';return}
+  if(!ps.length){svg.innerHTML=`<text x="380" y="65" text-anchor="middle" fill="#44505f" font-size="14" font-family="DM Sans">Chưa có data</text>`;leg.innerHTML='';return}
   const sorted=[...ps].sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
   const W=760,H=130,px=24,py=18,n=sorted.length;
   const rqis=sorted.map(rqi),dods=sorted.map(dod);
@@ -631,6 +658,7 @@ function delProject(){
 
 function openNew(){
   document.getElementById('fn-name').value='';document.getElementById('fn-role').value='uiux';
+  document.querySelectorAll('input[name="fn-role-radio"]').forEach(r=>r.checked = r.value === 'uiux');
   document.getElementById('fn-status').value='active';document.getElementById('fn-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('fn-obj').value='';syncGroups();
   document.getElementById('fn-owner').innerHTML='<option value="">— Unassigned —</option>'+S.members.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
@@ -638,6 +666,13 @@ function openNew(){
   setTimeout(()=>document.getElementById('fn-name').focus(),50);
 }
 function syncGroups(){const r=document.getElementById('fn-role').value;document.getElementById('fn-group').innerHTML=(GROUPS[r]||[]).map(g=>`<option value="${g.id}">${g.name}</option>`).join('')}
+
+function setFnRole(roleType){
+  const el=document.getElementById('fn-role');
+  if(!el) return;
+  el.value=roleType;
+  syncGroups();
+}
 function createProject(){
   const name=document.getElementById('fn-name').value.trim();if(!name){document.getElementById('fn-name').focus();return}
   const p={id:'p'+Date.now(),name,roleType:document.getElementById('fn-role').value,groupId:document.getElementById('fn-group').value,status:document.getElementById('fn-status').value,startDate:document.getElementById('fn-date').value,ownerId:document.getElementById('fn-owner').value,objective:document.getElementById('fn-obj').value.trim(),dodChecked:[],qualRatings:{},gatesPassed:[],gateDates:{},adoptionRate:0,notes:'',comments:[],createdAt:new Date().toISOString()};
@@ -650,8 +685,14 @@ function renderMembersModal(){
     ?S.members.map((m,i)=>{const col=MCOLORS[i%MCOLORS.length];const init=m.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();return`<div class="m-row"><div class="m-av" style="background:${col};width:28px;height:28px;font-size:11px">${init}</div><div class="m-name">${m.name}</div><div class="m-role">${m.role||''}</div><button class="btn btn-danger btn-sm btn-icon" onclick="removeMember('${m.id}')">×</button></div>`}).join('')
     :`<div style="font-size:12px;color:var(--text3);padding:8px 0 12px">Chưa có thành viên. Thêm bên dưới.</div>`;
 }
-function addMember(){const name=document.getElementById('nm-name').value.trim();if(!name)return;S.members.push({id:'m'+Date.now(),name,role:document.getElementById('nm-role').value.trim()});document.getElementById('nm-name').value='';document.getElementById('nm-role').value='';save();renderMembersModal();renderMemberBar()}
+function addMember(){const name=document.getElementById('nm-name').value.trim();if(!name)return;S.members.push({id:'m'+Date.now(),name,role:document.getElementById('nm-role').value.trim()});document.getElementById('nm-name').value='';document.getElementById('nm-role').value='UX/UI Designer';document.querySelectorAll('input[name="nm-role-radio"]').forEach(r=>r.checked = r.value === 'UX/UI Designer');save();renderMembersModal();renderMemberBar()}
 function removeMember(id){if(!confirm('Xóa thành viên này?'))return;S.members=S.members.filter(m=>m.id!==id);save();renderMembersModal();renderMemberBar()}
+
+function setNmRole(roleLabel){
+  const el=document.getElementById('nm-role');
+  if(!el) return;
+  el.value=roleLabel;
+}
 
 function exportJSON(){
   const data={projects:S.projects.map(p=>({...p,_rqi:rqi(p),_dod:dod(p)})),members:S.members,exportedAt:new Date().toISOString()};
@@ -842,20 +883,37 @@ function renderGlossary(activeGroupId, activeRoleType) {
     return y>=160 ? '#000' : '#fff';
   }
 
-  // Build all groups list
-  const allGroups = [
-    ...GROUPS.uiux.map(g=>({...g, roleType:'uiux'})),
-    ...GROUPS.uxr.map(g=>({...g, roleType:'uxr'}))
-  ];
-  const activeGroup = allGroups.find(g=>g.id===activeGroupId) || allGroups[0];
-  const curGroupId = activeGroupId || allGroups[0].id;
+  // 2-level filters: role (level 1) + group (level 2)
+  const roleType = activeRoleType || (activeGroupId ? (GROUPS.uiux.some(g=>g.id===activeGroupId) ? 'uiux' : 'uxr') : 'uiux');
+  S.glossaryLastGroupByRole = S.glossaryLastGroupByRole || {};
 
-  // Tab HTML
-  const tabsHTML = allGroups.map(g => {
+  const roleGroups = (GROUPS[roleType] || []).map(g=>({...g, roleType}));
+  const defaultGroupId = roleGroups[0]?.id || null;
+  const rememberedGroupId = S.glossaryLastGroupByRole[roleType];
+  const preferredGroupId = (activeGroupId && roleGroups.some(g=>g.id===activeGroupId))
+    ? activeGroupId
+    : (rememberedGroupId && roleGroups.some(g=>g.id===rememberedGroupId) ? rememberedGroupId : defaultGroupId);
+
+  const curGroupId = preferredGroupId;
+  const activeGroup = roleGroups.find(g=>g.id===curGroupId) || roleGroups[0];
+  if(curGroupId) S.glossaryLastGroupByRole[roleType] = curGroupId;
+
+  const roleTabsHTML = [
+    {id:'uiux', label:'UX/UI Designer'},
+    {id:'uxr', label:'Strategic Researcher'},
+  ].map(r=>{
+    const isOn = r.id === roleType;
+    const nextGroup = (S.glossaryLastGroupByRole?.[r.id] && (GROUPS[r.id]||[]).some(g=>g.id===S.glossaryLastGroupByRole[r.id]))
+      ? S.glossaryLastGroupByRole[r.id]
+      : (GROUPS[r.id]?.[0]?.id || '');
+    return `<button class="gl-tab${isOn?' on':''}" style="${isOn?'background:var(--accent);border-color:var(--accent);color:#000':''}" onclick="renderGlossary('${nextGroup}','${r.id}')">${r.label}</button>`;
+  }).join('');
+
+  // Group tabs (filtered by role)
+  const tabsHTML = roleGroups.map(g => {
     const isOn = g.id === curGroupId;
-    const trackLbl = g.roleType === 'uiux' ? 'UX/UI' : 'Strategic';
     const onColor=isOn ? contrastTextColor(g.color) : '';
-    return `<button class="gl-tab${isOn?' on':''}" style="${isOn?`background:${g.color};border-color:${g.color};`:''}color:${onColor}" onclick="renderGlossary('${g.id}','${g.roleType}')">${g.name}</button>`;
+    return `<button class="gl-tab${isOn?' on':''}" style="${isOn?`background:${g.color};border-color:${g.color};`:''}color:${onColor}" onclick="renderGlossary('${g.id}','${roleType}')">${g.name}</button>`;
   }).join('');
 
   // Group content
@@ -879,7 +937,7 @@ function renderGlossary(activeGroupId, activeRoleType) {
       </div>
       <div class="gl-item-body">
         ${whyHTML}
-        ${stepsHTML ? `<div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.8px;margin-bottom:8px;margin-top:4px">CÁCH THỰC HIỆN ĐẦY ĐỦ</div><ul class="gl-steps">${stepsHTML}</ul>` : ''}
+        ${stepsHTML ? `<div style="font-family:var(--mono);font-size:14px;color:var(--text3);letter-spacing:.8px;margin-bottom:8px;margin-top:4px">CÁCH THỰC HIỆN ĐẦY ĐỦ</div><ul class="gl-steps">${stepsHTML}</ul>` : ''}
         ${failHTML}
       </div>
     </div>`;
@@ -903,10 +961,11 @@ function renderGlossary(activeGroupId, activeRoleType) {
       <button class="btn btn-ghost btn-sm" onclick="history.back();if(S.cur)showDetail(S.cur.id)">← Quay lại</button>
       <div>
         <div style="font-family:var(--head);font-size:20px;font-weight:700">Giải nghĩa DoD</div>
-        <div style="font-size:12px;color:var(--text2);margin-top:2px">Giải nghĩa chi tiết từng tiêu chí Definition of Done</div>
+        <div style="font-size:14px;color:var(--text2);margin-top:2px">Giải nghĩa chi tiết từng tiêu chí Definition of Done</div>
       </div>
     </div>
 
+    <div class="gl-group-tabs" style="margin-bottom:10px">${roleTabsHTML}</div>
     <div class="gl-group-tabs">${tabsHTML}</div>
 
     <div style="margin-bottom:18px">
@@ -916,7 +975,7 @@ function renderGlossary(activeGroupId, activeRoleType) {
         <span class="tag ${(activeGroup?.roleType||activeRoleType)==='uiux'?'t-uiux':'t-uxr'}">${trackLabel}</span>
       </div>
       <div class="gl-group-sub">${subMethods[curGroupId]||''}</div>
-      <div style="display:flex;gap:14px;font-size:11px;color:var(--text3)">
+      <div style="display:flex;gap:14px;font-size:14px;color:var(--text3)">
         <span>●&nbsp;<span style="color:var(--accent)">Xanh</span> = CORE (hard-block nếu thiếu)</span>
         <span>●&nbsp;<span style="color:var(--border3)">Xám</span> = Extended (quality differentiator)</span>
         <span style="color:var(--text3)">Click vào từng item để xem giải nghĩa chi tiết</span>
@@ -932,5 +991,5 @@ function toggleGlItem(id) {
   el.classList.toggle('open');
 }
 
-load();syncGroups();renderMemberBar();renderDash();
+load().then(()=>{syncGroups();renderMemberBar();renderDash();});
 

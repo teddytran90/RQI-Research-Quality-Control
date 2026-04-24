@@ -17,7 +17,14 @@
     <button class="btn btn-ghost btn-sm" onclick="openImport()">↑ Nhập dữ liệu</button>
     <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ CSV</button>
     <button class="btn btn-ghost btn-sm" onclick="exportJSON()">⬇ JSON</button>
-    <button class="btn btn-ghost btn-sm btn-icon" onclick="openMembers()" title="Quản lý thành viên">👥</button>
+    <button class="btn btn-ghost btn-sm btn-icon" onclick="openMembers()" title="Quản lý thành viên" aria-label="Quản lý thành viên">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M16 18.5c0-2.2-2.7-4-6-4s-6 1.8-6 4V20h12v-1.5Z"/>
+        <path d="M10 12.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>
+        <path d="M20 20v-1.4c0-1.6-1.6-3-3.9-3.6"/>
+        <path d="M15.8 7.2a3.3 3.3 0 0 1 0 6.3"/>
+      </svg>
+    </button>
     <button class="btn btn-primary btn-sm" onclick="openNew()">+ Tạo nghiên cứu mới</button>
   </div>
 </header>
@@ -103,10 +110,21 @@
   <div class="modal">
     <div class="modal-title">Tạo nghiên cứu mới</div>
     <div class="fg"><label class="fl">Tên dự án nghiên cứu *</label><input class="fi" id="fn-name" placeholder="VD: Policy Usability Test — Sản phẩm Vay Q3 2025"/></div>
-    <div class="frow">
-      <div class="fg"><label class="fl">Loại vai trò *</label><select class="fs" id="fn-role" onchange="syncGroups()"><option value="uiux">UX/UI Designer</option><option value="uxr">Strategic Researcher</option></select></div>
-      <div class="fg"><label class="fl">Nhóm nghiên cứu *</label><select class="fs" id="fn-group"></select></div>
+    <input type="hidden" id="fn-role" value="uiux"/>
+    <div class="fg">
+      <label class="fl">Loại vai trò *</label>
+      <div class="role-radios" role="radiogroup" aria-label="Loại vai trò">
+        <label class="role-radio">
+          <input type="radio" name="fn-role-radio" value="uiux" checked onchange="setFnRole(this.value)"/>
+          <span>UX/UI Designer</span>
+        </label>
+        <label class="role-radio">
+          <input type="radio" name="fn-role-radio" value="uxr" onchange="setFnRole(this.value)"/>
+          <span>Strategic Researcher</span>
+        </label>
+      </div>
     </div>
+    <div class="fg"><label class="fl">Nhóm nghiên cứu *</label><select class="fs" id="fn-group"></select></div>
     <div class="frow">
       <div class="fg"><label class="fl">Trạng thái</label><select class="fs" id="fn-status"><option value="draft">Nháp</option><option value="active" selected>Active</option><option value="review">In Review</option><option value="done">Done</option></select></div>
       <div class="fg"><label class="fl">Ngày bắt đầu</label><input class="fi" type="date" id="fn-date"/></div>
@@ -122,9 +140,23 @@
   <div class="modal">
     <div class="modal-title">Thành viên nhóm</div>
     <div id="member-list-ui"></div>
-    <div class="frow" style="margin-bottom:10px">
+    <div class="fg" style="margin-bottom:10px">
+      <label class="fl">Tên thành viên</label>
       <input class="fi" id="nm-name" placeholder="Tên thành viên"/>
-      <input class="fi" id="nm-role" placeholder="Role (VD: UX Designer)"/>
+    </div>
+    <input type="hidden" id="nm-role" value="UX/UI Designer"/>
+    <div class="fg" style="margin-bottom:10px">
+      <label class="fl">Vai trò</label>
+      <div class="role-radios" role="radiogroup" aria-label="Vai trò thành viên">
+        <label class="role-radio">
+          <input type="radio" name="nm-role-radio" value="UX/UI Designer" checked onchange="setNmRole(this.value)"/>
+          <span>UX/UI Designer</span>
+        </label>
+        <label class="role-radio">
+          <input type="radio" name="nm-role-radio" value="Strategic Designer" onchange="setNmRole(this.value)"/>
+          <span>Strategic Designer</span>
+        </label>
+      </div>
     </div>
     <div class="m-actions"><button class="btn btn-ghost" onclick="closeModals()">Đóng</button><button class="btn btn-primary" onclick="addMember()">Thêm thành viên</button></div>
   </div>
