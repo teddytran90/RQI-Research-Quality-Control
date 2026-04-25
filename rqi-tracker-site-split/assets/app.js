@@ -1,6 +1,8 @@
 const MCOLORS=['#FFC709','#27c47e','#f0a020','#e0404f','#8b6fff','#18c49a','#e05090','#f06030'];
 const ICON_CHEVRON_LEFT=`<svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path fill-rule="evenodd" clip-rule="evenodd" d="M16.0303 19.5303C16.3232 19.2374 16.3232 18.7626 16.0303 18.4697L9.56066 12L16.0303 5.53033C16.3232 5.23744 16.3232 4.76256 16.0303 4.46967C15.7374 4.17678 15.2626 4.17678 14.9697 4.46967L7.96967 11.4697C7.67678 11.7626 7.67678 12.2374 7.96967 12.5303L14.9697 19.5303C15.2626 19.8232 15.7374 19.8232 16.0303 19.5303Z" fill="currentColor"/></svg>`;
 const ICON_CHEVRON_RIGHT=`<svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path fill-rule="evenodd" clip-rule="evenodd" d="M7.96967 19.5303C7.67678 19.2374 7.67678 18.7626 7.96967 18.4697L14.4393 12L7.96967 5.53033C7.67678 5.23744 7.67678 4.76256 7.96967 4.46967C8.26256 4.17678 8.73744 4.17678 9.03033 4.46967L16.0303 11.4697C16.3232 11.7626 16.3232 12.2374 16.0303 12.5303L9.03033 19.5303C8.73744 19.8232 8.26256 19.8232 7.96967 19.5303Z" fill="currentColor"/></svg>`;
+const ICON_CHECK=`<img class="icon icon-check" src="./assets/check.svg" alt="" aria-hidden="true"/>`;
+function stripUiDashes(html){return (html||'').replaceAll('—','')}
 const GATES=[
   {id:'g1',name:'Briefing trước nghiên cứu',desc:'Câu hỏi nghiên cứu, phương pháp, kế hoạch mẫu & phê duyệt stakeholder TRƯỚC khi ra thực địa'},
   {id:'g2',name:'Kiểm tra giữa nghiên cứu',desc:'Xem xét độ đủ mẫu, chủ đề ban đầu, gắn cờ sai lệch sau 40–50% công việc thực địa'},
@@ -308,7 +310,7 @@ function hardBlocks(p){
   // 3. Không có Critical quality (1 sao)
   const minRating=Math.min(...Object.values(p.qualRatings||{1:5}));
   const hasCritical=Object.keys(p.qualRatings||{}).length>0 && minRating===1;
-  if(hasCritical) blocks.push({pass:false,label:'Có tiêu chí chất lượng được đánh 1 sao — tất cả phải ≥ 2 sao',critical:true});
+  if(hasCritical) blocks.push({pass:false,label:'Có tiêu chí chất lượng được đánh 1 sao · tất cả phải ≥ 2 sao',critical:true});
   else blocks.push({pass:true,label:'Không có tiêu chí chất lượng nào 1 sao'});
   // 4. Gate 1 (Pre-brief) VÀ Gate 3 (Peer Review) phải pass
   const g1=( p.gatesPassed||[]).includes('g1');
@@ -323,11 +325,11 @@ function verdict(p){
   const gs=gateScore(p);
   const blocks=hardBlocks(p);
   const anyFail=blocks.some(b=>!b.pass);
-  if(anyFail) return {key:'block',label:'Bị chặn — Không đủ điều kiện bàn giao',short:'Bị chặn',icon:'⛔',bannerCls:'vb-block',cardCls:'cv-block',color:'var(--red)',desc:'Có ít nhất 1 điều kiện bắt buộc chưa đạt. Cần bổ sung trước khi nộp lên hội đồng.'};
-  if(gs>=85) return {key:'pass-hi',label:'Xuất sắc — Bàn giao không điều kiện',short:'Xuất sắc',icon:'✅',bannerCls:'vb-pass-hi',cardCls:'cv-pass-hi',color:'var(--green)',desc:'Chất lượng xuất sắc. Nghiên cứu này có thể dùng làm mẫu tham chiếu cho nhóm.'};
-  if(gs>=70) return {key:'pass',label:'Đạt — Đủ điều kiện bàn giao',short:'Đạt',icon:'🟢',bannerCls:'vb-pass',cardCls:'cv-pass',color:'var(--accent)',desc:'Đủ điều kiện bàn giao. Người đánh giá ghi lại 1–2 điểm cần cải thiện cho lần sau (không yêu cầu làm lại).'};
-  if(gs>=55) return {key:'cond',label:'Có điều kiện — Cần sửa trước khi bàn giao',short:'Có điều kiện',icon:'⚠️',bannerCls:'vb-cond',cardCls:'cv-cond',color:'var(--amber)',desc:'Gate Score 55–69%. Phải fix các điểm Critical/Major. Hội đồng họp ngắn với researcher trước khi approve.'};
-  return {key:'block',label:'Block — Không đủ điều kiện bàn giao',short:'Block',icon:'⛔',bannerCls:'vb-block',cardCls:'cv-block',color:'var(--red)',desc:'Gate Score dưới 55%. Researcher bổ sung và submit lại. Ghi rõ lý do block.'};
+  if(anyFail) return {key:'block',label:'Bị chặn · Không đủ điều kiện bàn giao',short:'Bị chặn',icon:'⛔',bannerCls:'vb-block',cardCls:'cv-block',color:'var(--red)',desc:'Có ít nhất 1 điều kiện bắt buộc chưa đạt. Cần bổ sung trước khi nộp lên hội đồng.'};
+  if(gs>=85) return {key:'pass-hi',label:'Xuất sắc · Bàn giao không điều kiện',short:'Xuất sắc',icon:ICON_CHECK,bannerCls:'vb-pass-hi',cardCls:'cv-pass-hi',color:'var(--green)',desc:'Chất lượng xuất sắc. Nghiên cứu này có thể dùng làm mẫu tham chiếu cho nhóm.'};
+  if(gs>=70) return {key:'pass',label:'Đạt · Đủ điều kiện bàn giao',short:'Đạt',icon:'🟢',bannerCls:'vb-pass',cardCls:'cv-pass',color:'var(--accent)',desc:'Đủ điều kiện bàn giao. Người đánh giá ghi lại 1–2 điểm cần cải thiện cho lần sau (không yêu cầu làm lại).'};
+  if(gs>=55) return {key:'cond',label:'Có điều kiện · Cần sửa trước khi bàn giao',short:'Có điều kiện',icon:'⚠️',bannerCls:'vb-cond',cardCls:'cv-cond',color:'var(--amber)',desc:'Gate Score 55–69%. Phải fix các điểm Critical/Major. Hội đồng họp ngắn với researcher trước khi approve.'};
+  return {key:'block',label:'Block · Không đủ điều kiện bàn giao',short:'Block',icon:'⛔',bannerCls:'vb-block',cardCls:'cv-block',color:'var(--red)',desc:'Gate Score dưới 55%. Researcher bổ sung và submit lại. Ghi rõ lý do block.'};
 }
 
 function dod(p){const g=gd(p);if(!g||!g.dod.length)return 0;return Math.round((p.dodChecked||[]).length/g.dod.length*100)}
@@ -458,12 +460,12 @@ function renderMemberBar(){
   const bar=document.getElementById('member-bar');
   if(!bar) return;
   if(!S.members.length){bar.innerHTML='';return}
-  bar.innerHTML=S.members.map((m,i)=>{
+  bar.innerHTML=stripUiDashes(S.members.map((m,i)=>{
     const col=MCOLORS[i%MCOLORS.length];
     const init=m.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     return`<button class="member-chip${S.filterMember===m.id?' active':''}" onclick="toggleFilter('${m.id}')">
       <div class="m-av" style="background:${col};width:18px;height:18px;font-size:14px">${init}</div>${m.name.split(' ')[0]}</button>`;
-  }).join('');
+  }).join(''));
 }
 
 function toggleFilter(id){
@@ -479,14 +481,14 @@ function renderSidebar(){
   const visible=S.projects.filter(p=>!isPendingProject(p));
   document.getElementById('badge-all').textContent=visible.length;
   const recent=[...visible].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,10);
-  document.getElementById('sidebar-list').innerHTML=recent.map(p=>{
+  document.getElementById('sidebar-list').innerHTML=stripUiDashes(recent.map(p=>{
     const gs=gateScore(p);const v=verdict(p);const m=mb(p.ownerId);const col=m?mc(p.ownerId):'';const init=m?mi(p.ownerId):'';
     return`<div class="proj-item${S.cur?.id===p.id?' sel':''}" onclick="showDetail('${p.id}')">
       <div class="pj-name">${p.name}</div>
-      <div class="pj-row"><span class="pj-type">${p.roleType==='uiux'?'UX/UI':'CHIẾN LƯỢC'}</span><span class="pj-rqi" style="color:${v.color}">${gs}%</span><span style="font-size:14px">${v.icon}</span></div>
+      <div class="pj-row"><span class="pj-type">${p.roleType==='uiux'?'UX/UI':'CHIẾN LƯỢC'}</span><span class="pj-rqi" style="color:${v.color}">${gs}%</span><span class="pj-icon">${v.icon||''}</span></div>
       ${m?`<div class="pj-sub"><span class="pj-type">${m.name}</span></div>`:''}
     </div>`;
-  }).join('');
+  }).join(''));
 }
 
 function projCard(p){
@@ -500,7 +502,7 @@ function projCard(p){
     <div class="card-head">
       <div style="flex:1;min-width:0">
         <div class="card-name">${p.name}</div>
-        <div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap">
+        <div style="display:flex;column-gap:5px;row-gap:4px;margin-top:4px;flex-wrap:wrap">
           <span class="tag ${p.roleType==='uiux'?'t-uiux':'t-uxr'}">${p.roleType==='uiux'?'UX/UI':'Chiến lược'}</span>
           <span class="tag ${stC[p.status]||'t-draft'}">${stL[p.status]||p.status}</span>
           <span class="card-verdict ${v.cardCls}">${v.icon} ${v.short}</span>
@@ -512,10 +514,14 @@ function projCard(p){
       </div>
     </div>
     <div style="font-size:14px;color:var(--text3);margin:8px 0 6px">${g?.name||''}</div>
-    <div class="prog-bar"><div class="prog-fill" style="width:${d}%;background:${col}"></div></div>
+    <div class="prog-bar"><div class="prog-fill" style="width:${d}%;background:var(--accent)"></div></div>
     <div class="card-foot">
-      <div class="card-meta">DoD ${d}% · RQI ${r}%${cc?` · 💬 ${cc} bình luận`:''}</div>
-      <div style="display:flex;align-items:center;gap:6px">${m?`<div class="m-av" style="background:${mc2};width:18px;height:18px;font-size:14px">${mi2}</div>`:''}<div class="card-meta" style="font-family:var(--mono)">${p.startDate||'—'}</div></div>
+      <div>
+        <div class="card-meta">DoD ${d}% · RQI ${r}%</div>
+        ${cc?`<div class="card-meta">${cc} bình luận</div>`:''}
+        ${m?`<div class="card-meta">${m.name}</div>`:''}
+      </div>
+      <div class="card-meta" style="font-family:var(--mono)">${p.startDate||''}</div>
     </div></div>`;
 }
 
@@ -535,27 +541,31 @@ function renderDash(){
   if(avgGs!==null){
     const v=avgGs>=85?'c-green':avgGs>=70?'c-accent':avgGs>=55?'c-amber':'c-red';
     gsEl.textContent=avgGs+'%';gsEl.className='mc-value '+v;
-  } else {gsEl.textContent='—';gsEl.className='mc-value';}
+  } else {gsEl.textContent='';gsEl.className='mc-value';}
 
-  const dodEl=document.getElementById('m-dod');if(avd!==null)dodEl.textContent=avd+'%';else dodEl.textContent='—';
+  const dodEl=document.getElementById('m-dod');if(avd!==null)dodEl.textContent=avd+'%';else dodEl.textContent='';
 
   // update metric labels
   const lbl=document.getElementById('m-rqi-label');if(lbl)lbl.textContent='Gate Score Avg';
   const sub=document.getElementById('m-rqi-sub');if(sub)sub.textContent='Ngưỡng đạt ≥ 70%';
   const passEl=document.getElementById('m-pass');
-  if(passEl){passEl.textContent=ps.length?passCount+'/'+ps.length:'—';}
+  if(passEl){passEl.textContent=ps.length?passCount+'/'+ps.length:'';}
 
   renderTrend(ps);
   const recent=[...ps].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,6);
-  document.getElementById('dash-cards').innerHTML=recent.length?recent.map(projCard).join(''):`<div class="empty" style="grid-column:1/-1"><div class="empty-icon">◈</div><div class="empty-title">Chưa có research nào</div><div class="empty-sub">Tạo research đầu tiên để bắt đầu tracking</div><button class="btn btn-primary" onclick="openNew()">+ New Research</button></div>`;
+  document.getElementById('dash-cards').innerHTML=stripUiDashes(recent.length?recent.map(projCard).join(''):`<div class="empty" style="grid-column:1/-1"><div class="empty-icon">◈</div><div class="empty-title">Chưa có research nào</div><div class="empty-sub">Tạo research đầu tiên để bắt đầu tracking</div><button class="btn btn-primary" onclick="openNew()">+ New Research</button></div>`);
   renderSidebar();
 }
 
 function renderTrend(ps){
   const svg=document.getElementById('trend-svg');const leg=document.getElementById('trend-legend');
-  if(!ps.length){svg.innerHTML=`<text x="380" y="65" text-anchor="middle" fill="#44505f" font-size="14" font-family="DM Sans">Chưa có data</text>`;leg.innerHTML='';return}
+  const H=130,px=24,py=18;
+  const W=Math.max(560,Math.round(svg?.getBoundingClientRect?.().width||760));
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+  if(!ps.length){svg.innerHTML=`<text x="${Math.round(W/2)}" y="65" text-anchor="middle" fill="#44505f" font-size="14" font-family="DM Sans">Chưa có data</text>`;leg.innerHTML='';return}
   const sorted=[...ps].sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
-  const W=760,H=130,px=24,py=18,n=sorted.length;
+  const n=sorted.length;
   const rqis=sorted.map(rqi),dods=sorted.map(dod);
   function xy(arr,i){const x=n===1?W/2:px+(i/(n-1))*(W-px*2);const y=H-py-(arr[i]/100)*(H-py*2);return[x,y]}
   function path(arr,col,area){
@@ -582,16 +592,16 @@ function renderAll(){
   if(fmEl){const pv=fmEl.value;fmEl.innerHTML='<option value="">Tất cả thành viên</option>'+S.members.map(m=>`<option value="${m.id}"${m.id===pv?' selected':''}>${m.name}</option>`).join('');fmEl.value=pv}
   const f=S.projects.filter(p=>!isPendingProject(p) && (!ty||p.roleType===ty)&&(!st||p.status===st)&&(!me||p.ownerId===me));
   const sub=document.getElementById('all-sub');if(sub)sub.textContent=`Hiển thị ${f.length} / ${S.projects.length} nghiên cứu`;
-  document.getElementById('all-cards').innerHTML=f.length?f.map(projCard).join(''):`<div class="empty" style="grid-column:1/-1"><div class="empty-icon">◫</div><div class="empty-title">Không có kết quả</div><div class="empty-sub">Thử thay đổi filter hoặc tạo research mới</div></div>`;
+  document.getElementById('all-cards').innerHTML=stripUiDashes(f.length?f.map(projCard).join(''):`<div class="empty" style="grid-column:1/-1"><div class="empty-icon">◫</div><div class="empty-title">Không có kết quả</div><div class="empty-sub">Thử thay đổi filter hoặc tạo research mới</div></div>`);
 }
 
 function renderCompare(){
-  const opts='<option value="">— Chọn research —</option>'+S.projects.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  const opts=stripUiDashes('<option value="">Chọn research</option>'+S.projects.map(p=>`<option value="${p.id}">${p.name}</option>`).join(''));
   ['cmp-a','cmp-b'].forEach(id=>{const el=document.getElementById(id);const cv=el.value;el.innerHTML=opts;if(cv)el.value=cv});
   const idA=document.getElementById('cmp-a').value,idB=document.getElementById('cmp-b').value;
   const body=document.getElementById('compare-body');
-  if(!idA||!idB){body.innerHTML=`<div class="empty"><div class="empty-icon">⇄</div><div class="empty-title">Chọn 2 research để so sánh</div></div>`}
-  else{const pA=S.projects.find(p=>p.id===idA),pB=S.projects.find(p=>p.id===idB);body.innerHTML=`<div class="cmp-grid">${cmpPanel(pA)}${cmpPanel(pB)}</div>`}
+  if(!idA||!idB){body.innerHTML=stripUiDashes(`<div class="empty"><div class="empty-icon">⇄</div><div class="empty-title">Chọn 2 research để so sánh</div></div>`)}
+  else{const pA=S.projects.find(p=>p.id===idA),pB=S.projects.find(p=>p.id===idB);body.innerHTML=stripUiDashes(`<div class="cmp-grid">${cmpPanel(pA)}${cmpPanel(pB)}</div>`)}
   renderLeaderboard();
 }
 
@@ -618,15 +628,15 @@ function cmpPanel(p){
 function renderLeaderboard(){
   if(!S.members.length){document.getElementById('leaderboard').innerHTML=`<div style="font-size:12px;color:var(--text3);padding:8px">Chưa có team members. Thêm qua nút 👥.</div>`;return}
   const stats=S.members.map((m,i)=>{const ps=S.projects.filter(p=>p.ownerId===m.id);const gss=ps.map(gateScore);const avg=gss.length?Math.round(gss.reduce((a,b)=>a+b,0)/gss.length):null;const passC=ps.filter(p=>verdict(p).key!=='block').length;return{m,i,cnt:ps.length,avg,passC,col:MCOLORS[i%MCOLORS.length]}}).sort((a,b)=>(b.avg||0)-(a.avg||0));
-  document.getElementById('leaderboard').innerHTML=stats.map((s,rank)=>{
+  document.getElementById('leaderboard').innerHTML=stripUiDashes(stats.map((s,rank)=>{
     const init=s.m.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     const col=s.avg===null?'var(--text3)':s.avg>=85?'var(--green)':s.avg>=70?'var(--accent)':s.avg>=55?'var(--amber)':'var(--red)';
     return`<div class="lbr-row"><div style="font-family:var(--mono);font-size:11px;color:var(--text3);width:18px">#${rank+1}</div>
       <div class="m-av" style="background:${s.col};width:28px;height:28px;font-size:11px">${init}</div>
       <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">${s.m.name}</div><div style="font-size:11px;color:var(--text3)">${s.m.role||''} · ${s.cnt} nghiên cứu · ${s.passC} đạt</div></div>
-      <div style="text-align:right"><div style="font-family:var(--head);font-size:20px;font-weight:800;color:${col}">${s.avg!==null?s.avg+'%':'—'}</div><div style="font-size:9px;color:var(--text3);font-family:var(--mono)">Gate TB</div></div>
+      <div style="text-align:right"><div style="font-family:var(--head);font-size:20px;font-weight:800;color:${col}">${s.avg!==null?s.avg+'%':''}</div><div style="font-size:9px;color:var(--text3);font-family:var(--mono)">Gate TB</div></div>
     </div>`;
-  }).join('');
+  }).join(''));
 }
 
 function renderDetail(){
@@ -656,7 +666,7 @@ function renderDetail(){
   const commH=(p.comments||[]).map(c=>{const cm=mb(c.memberId);const ci=cm?mc(c.memberId):'var(--border2)';const cinit=cm?mi(c.memberId):'?';const tC={review:'ct-review',flag:'ct-flag',note:'ct-note'};const tL={review:'Đánh giá',flag:'Gắn cờ',note:'Ghi chú'};return`<div class="comment"><div class="c-av" style="background:${ci};width:26px;height:26px;font-size:10px">${cinit}</div><div class="c-body"><div class="c-header"><span class="c-author">${cm?.name||'Anonymous'}</span><span class="c-time">${rt(c.createdAt)}</span><span class="c-type ${tC[c.type]||'ct-note'}">${tL[c.type]||c.type}</span></div><div class="c-text">${c.text}</div></div></div>`}).join('');
   const mOpts=S.members.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
 
-  document.getElementById('detail-content').innerHTML=`
+  document.getElementById('detail-content').innerHTML=stripUiDashes(`
     <div class="dh-nav" style="margin-bottom:14px">
       <button class="btn btn-ghost btn-sm" onclick="${isPending?'cancelInit()':backAction.onclick}">${ICON_CHEVRON_LEFT}${isPending?'Cancel':backAction.label}</button>
       <div class="dh-right">
@@ -763,7 +773,7 @@ function renderDetail(){
 
     <div style="display:flex;justify-content:flex-end;padding-top:4px">
       <button class="btn btn-danger btn-sm" onclick="delProject()">Xóa nghiên cứu</button>
-    </div>`;
+    </div>`);
   renderSidebar();
 }
 
@@ -793,7 +803,7 @@ function openNew(){
   document.querySelectorAll('input[name="fn-role-radio"]').forEach(r=>r.checked = r.value === 'uiux');
   document.getElementById('fn-status').value='open';document.getElementById('fn-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('fn-obj').value='';syncGroups();
-  document.getElementById('fn-owner').innerHTML='<option value="">— Unassigned —</option>'+S.members.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+  document.getElementById('fn-owner').innerHTML=stripUiDashes('<option value="">Unassigned</option>'+S.members.map(m=>`<option value="${m.id}">${m.name}</option>`).join(''));
   document.getElementById('modal-new').classList.add('open');
   setTimeout(()=>document.getElementById('fn-name').focus(),50);
 }
@@ -817,9 +827,9 @@ function createProject(){
 
 function openMembers(){renderMembersModal();document.getElementById('modal-members').classList.add('open')}
 function renderMembersModal(){
-  document.getElementById('member-list-ui').innerHTML=S.members.length
+  document.getElementById('member-list-ui').innerHTML=stripUiDashes(S.members.length
     ?S.members.map((m,i)=>{const col=MCOLORS[i%MCOLORS.length];const init=m.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();return`<div class="m-row"><div class="m-av" style="background:${col};width:28px;height:28px;font-size:11px">${init}</div><div class="m-name">${m.name}</div><div class="m-role">${m.role||''}</div><button class="btn btn-danger btn-sm btn-icon" onclick="removeMember('${m.id}')">×</button></div>`}).join('')
-    :`<div style="font-size:12px;color:var(--text3);padding:8px 0 12px">Chưa có thành viên. Thêm bên dưới.</div>`;
+    :`<div style="font-size:12px;color:var(--text3);padding:8px 0 12px">Chưa có thành viên. Thêm bên dưới.</div>`);
 }
 function addMember(){const name=document.getElementById('nm-name').value.trim();if(!name)return;S.members.push({id:'m'+Date.now(),name,role:document.getElementById('nm-role').value.trim()});document.getElementById('nm-name').value='';document.getElementById('nm-role').value='UX/UI Designer';document.querySelectorAll('input[name="nm-role-radio"]').forEach(r=>r.checked = r.value === 'UX/UI Designer');save();renderMembersModal();renderMemberBar()}
 function removeMember(id){
@@ -1084,20 +1094,31 @@ function renderGlossary(activeGroupId, activeRoleType) {
   const glossItems = DOD_GLOSSARY[curGroupId] || [];
   const groupDod = activeGroup?.dod || [];
 
-  const itemsHTML = groupDod.map((dodItem, idx) => {
+  const activeKey = `${roleType}:${curGroupId}`;
+  S.glossaryActiveItemByGroup = S.glossaryActiveItemByGroup || {};
+  const preferredActiveId = S.glossaryActiveItemByGroup[activeKey];
+  const activeId = (preferredActiveId && groupDod.some(x=>x.id===preferredActiveId)) ? preferredActiveId : (groupDod[0]?.id || '');
+  if(activeId) S.glossaryActiveItemByGroup[activeKey] = activeId;
+
+  const items = groupDod.map((dodItem, idx) => {
     const gloss = glossItems.find(x=>x.id===dodItem.id);
     const numColor = dodItem.core ? 'var(--accent)' : 'var(--border3)';
     const numTextColor = dodItem.core ? '#000' : '#fff';
-    const stepsHTML = gloss ? gloss.steps.map(s=>`<li><strong>${s.k}:</strong> ${s.v}</li>`).join('') : '';
+    const stepsHTML = gloss ? gloss.steps.map(s=>`<li><span class="gl-step-k">${s.k}:</span><span class="gl-step-v">${s.v}</span></li>`).join('') : '';
     const failHTML = gloss?.fail ? `<div class="gl-fail">${gloss.fail}</div>` : '';
     const whyHTML = gloss?.why ? `<div class="gl-why"><strong>Tại sao item này tồn tại?</strong>${gloss.why}</div>` : '';
 
-    return `<div class="gl-item" id="gl-${dodItem.id}">
-      <div class="gl-item-header" onclick="toggleGlItem('${dodItem.id}')">
+    const menuHTML = `<button class="gl-menu-item${dodItem.id===activeId?' on':''}" onclick="selectGlossaryItem('${curGroupId}','${roleType}','${dodItem.id}')">
+      <div class="gl-item-num" style="background:${numColor};color:${numTextColor}">${idx+1}</div>
+      <div class="gl-menu-title">${dodItem.text}</div>
+      ${dodItem.core ? '<div class="gl-core-badge">CORE</div>' : ''}
+    </button>`;
+
+    const contentHTML = `<div class="gl-item gl-static" id="gl-${dodItem.id}">
+      <div class="gl-item-header">
         <div class="gl-item-num" style="background:${numColor};color:${numTextColor}">${idx+1}</div>
         <div class="gl-item-title">${dodItem.text}</div>
         ${dodItem.core ? '<div class="gl-core-badge">CORE</div>' : ''}
-        <div class="gl-chevron">▶</div>
       </div>
       <div class="gl-item-body">
         ${whyHTML}
@@ -1105,7 +1126,12 @@ function renderGlossary(activeGroupId, activeRoleType) {
         ${failHTML}
       </div>
     </div>`;
-  }).join('');
+
+    return {id:dodItem.id, menuHTML, contentHTML};
+  });
+
+  const menuHTML = items.map(x=>x.menuHTML).join('');
+  const contentHTML = items.find(x=>x.id===activeId)?.contentHTML || '';
 
   const subMethods = {
     'user-research': 'Usability testing · User interview · Contextual inquiry · Survey / Diary study',
@@ -1120,16 +1146,13 @@ function renderGlossary(activeGroupId, activeRoleType) {
   };
   const trackLabel = (activeGroup?.roleType||activeRoleType)==='uiux' ? 'UX/UI Designer' : 'Strategic Researcher';
 
-  document.getElementById('glossary-content').innerHTML = `
-    <div style="margin-bottom:20px;display:flex;align-items:center;gap:10px">
-      <button class="btn btn-ghost btn-sm" onclick="history.back();if(S.cur)showDetail(S.cur.id)">${ICON_CHEVRON_LEFT}Quay lại</button>
-      <div>
-        <div style="font-family:var(--head);font-size:20px;font-weight:700">Giải nghĩa DoD</div>
-        <div style="font-size:14px;color:var(--text2);margin-top:2px">Giải nghĩa chi tiết từng tiêu chí Definition of Done</div>
-      </div>
+  document.getElementById('glossary-content').innerHTML = stripUiDashes(`
+    <div style="margin-bottom:20px">
+      <div style="font-family:var(--head);font-size:20px;font-weight:700">Giải nghĩa DoD</div>
+      <div style="font-size:14px;color:var(--text2);margin-top:2px">Giải nghĩa chi tiết từng tiêu chí Definition of Done</div>
     </div>
 
-    <div class="gl-group-tabs" style="margin-bottom:10px">${roleTabsHTML}</div>
+    <div class="gl-group-tabs gl-role-tabs" style="margin-bottom:10px">${roleTabsHTML}</div>
     <div class="gl-group-tabs">${tabsHTML}</div>
 
     <div style="margin-bottom:18px">
@@ -1142,17 +1165,28 @@ function renderGlossary(activeGroupId, activeRoleType) {
       <div style="display:flex;gap:14px;font-size:14px;color:var(--text3)">
         <span>●&nbsp;<span style="color:var(--accent)">Xanh</span> = CORE (hard-block nếu thiếu)</span>
         <span>●&nbsp;<span style="color:var(--border3)">Xám</span> = Extended (quality differentiator)</span>
-        <span style="color:var(--text3)">Click vào từng item để xem giải nghĩa chi tiết</span>
+        <span style="color:var(--text3)">Chọn item bên trái để xem nội dung</span>
       </div>
     </div>
 
-    <div id="gl-items">${itemsHTML}</div>`;
+    <div id="gl-items">
+      <div class="gl-layout">
+        <div class="gl-menu">${menuHTML}</div>
+        <div class="gl-content">${contentHTML}</div>
+      </div>
+    </div>`);
 }
 
 function toggleGlItem(id) {
   const el = document.getElementById('gl-'+id);
   if(!el) return;
   el.classList.toggle('open');
+}
+
+function selectGlossaryItem(groupId, roleType, itemId){
+  S.glossaryActiveItemByGroup = S.glossaryActiveItemByGroup || {};
+  S.glossaryActiveItemByGroup[`${roleType}:${groupId}`] = itemId;
+  renderGlossary(groupId, roleType);
 }
 
 load().then(()=>{syncGroups();renderMemberBar();renderDash();});

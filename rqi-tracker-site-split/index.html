@@ -13,9 +13,9 @@
 <header class="topbar">
   <div class="logo"><div class="logo-pill">RQI</div>Research Quality Index</div>
   <div class="topbar-right">
-    <button class="btn btn-ghost btn-sm" onclick="openImport()">↑ Nhập dữ liệu</button>
-    <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ CSV</button>
-    <button class="btn btn-ghost btn-sm" onclick="exportJSON()">⬇ JSON</button>
+    <button class="btn btn-ghost btn-sm" onclick="openImport()"><img class="icon" src="./assets/arrow-up.svg" alt="" aria-hidden="true"/>Nhập dữ liệu</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportCSV()"><img class="icon" src="./assets/arrow-down.svg" alt="" aria-hidden="true"/>CSV</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportJSON()"><img class="icon" src="./assets/arrow-down.svg" alt="" aria-hidden="true"/>JSON</button>
     <button class="btn btn-ghost btn-sm btn-icon" onclick="openMembers()" title="Quản lý thành viên" aria-label="Quản lý thành viên">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M16 18.5c0-2.2-2.7-4-6-4s-6 1.8-6 4V20h12v-1.5Z"/>
@@ -24,7 +24,7 @@
         <path d="M15.8 7.2a3.3 3.3 0 0 1 0 6.3"/>
       </svg>
     </button>
-    <button class="btn btn-primary btn-sm" onclick="openNew()">+ Tạo nghiên cứu mới</button>
+    <button class="btn btn-primary btn-sm" onclick="openNew()"><img class="icon" src="./assets/plus.svg" alt="" aria-hidden="true"/>Tạo nghiên cứu mới</button>
   </div>
 </header>
 
@@ -66,17 +66,17 @@
       <div class="page-title">Tổng quan nghiên cứu</div>
       <div class="page-sub">Orchestrated RQI Framework · <span id="dash-ctx">Tất cả thành viên</span></div>    </div>
     <div class="metric-row">
-      <div class="metric-card"><div class="mc-label" id="m-rqi-label">Gate Score TB</div><div class="mc-value" id="m-rqi">—</div><div class="mc-sub" id="m-rqi-sub">Ngưỡng pass ≥ 70%</div></div>
-      <div class="metric-card"><div class="mc-label">Tỉ lệ đạt</div><div class="mc-value c-green" id="m-pass">—</div><div class="mc-sub">Nghiên cứu đủ điều kiện bàn giao</div></div>
+      <div class="metric-card"><div class="mc-label" id="m-rqi-label">Gate Score TB</div><div class="mc-value" id="m-rqi"></div><div class="mc-sub" id="m-rqi-sub">Ngưỡng pass ≥ 70%</div></div>
+      <div class="metric-card"><div class="mc-label">Tỉ lệ đạt</div><div class="mc-value c-green" id="m-pass"></div><div class="mc-sub">Nghiên cứu đủ điều kiện bàn giao</div></div>
       <div class="metric-card"><div class="mc-label">Đang thực hiện</div><div class="mc-value c-accent" id="m-active">0</div><div class="mc-sub">Đang tiến hành</div></div>
-      <div class="metric-card"><div class="mc-label">DoD Trung bình</div><div class="mc-value" id="m-dod">—</div><div class="mc-sub">Mức hoàn thành checklist</div></div>
+      <div class="metric-card"><div class="mc-label">DoD Trung bình</div><div class="mc-value" id="m-dod"></div><div class="mc-sub">Mức hoàn thành checklist</div></div>
     </div>
     <div class="trend-card">
       <div class="trend-head">
         <div class="trend-title">Xu hướng RQI theo thời gian</div>
         <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">Sắp xếp theo ngày tạo</div>
       </div>
-      <svg id="trend-svg" viewBox="0 0 760 130" style="width:100%;height:130px" preserveAspectRatio="none"></svg>
+      <svg id="trend-svg" viewBox="0 0 760 130" style="width:100%;height:130px" preserveAspectRatio="xMidYMid meet"></svg>
       <div class="trend-legend" id="trend-legend"></div>
     </div>
     <div class="sec-label">Nghiên cứu gần đây</div>
@@ -119,7 +119,7 @@
 <div class="modal-overlay" id="modal-new">
   <div class="modal">
     <div class="modal-title">Tạo nghiên cứu mới</div>
-    <div class="fg"><label class="fl">Tên dự án nghiên cứu *</label><input class="fi" id="fn-name" placeholder="VD: Policy Usability Test — Sản phẩm Vay Q3 2025"/></div>
+    <div class="fg"><label class="fl">Tên dự án nghiên cứu *</label><input class="fi" id="fn-name" placeholder="VD: Policy Usability Test · Sản phẩm Vay Q3 2025"/></div>
     <input type="hidden" id="fn-role" value="uiux"/>
     <div class="fg">
       <label class="fl">Loại vai trò *</label>
@@ -139,7 +139,7 @@
       <div class="fg"><label class="fl">Trạng thái</label><select class="fs" id="fn-status"><option value="open" selected>Open</option><option value="active">Active</option><option value="review">In Review</option><option value="done">Done</option></select></div>
       <div class="fg"><label class="fl">Ngày bắt đầu</label><input class="fi" type="date" id="fn-date"/></div>
     </div>
-    <div class="fg"><label class="fl">Người phụ trách</label><select class="fs" id="fn-owner"><option value="">— Chưa phân công —</option></select></div>
+    <div class="fg"><label class="fl">Người phụ trách</label><select class="fs" id="fn-owner"><option value="">Chưa phân công</option></select></div>
     <div class="fg"><label class="fl">Mục tiêu nghiên cứu</label><textarea class="notes-ta" id="fn-obj" placeholder="Mục tiêu nghiên cứu..." style="min-height:60px"></textarea></div>
     <div class="m-actions"><button class="btn btn-ghost" onclick="closeModals()">Hủy</button><button class="btn btn-primary" onclick="createProject()">Tạo mới</button></div>
   </div>
