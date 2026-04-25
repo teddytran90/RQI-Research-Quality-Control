@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RQI Trình theo dõi chất lượng nghiên cứu</title>
+  <title>Research Quality Index</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./assets/styles.css">
 </head>
@@ -11,8 +11,7 @@
 <div class="app">
 
 <header class="topbar">
-  <div class="logo"><div class="logo-pill">RQI</div>Research Quality Tracker</div>
-  <div class="topbar-center" id="member-bar"></div>
+  <div class="logo"><div class="logo-pill">RQI</div>Research Quality Index</div>
   <div class="topbar-right">
     <button class="btn btn-ghost btn-sm" onclick="openImport()">↑ Nhập dữ liệu</button>
     <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ CSV</button>
@@ -41,6 +40,15 @@
     </button>
     <button class="nav-item" id="nav-compare" onclick="showView('compare',this)">
       <span>⇄</span> So sánh
+    </button>
+    <button class="nav-item" id="nav-members" onclick="showView('members',this)">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M16 18.5c0-2.2-2.7-4-6-4s-6 1.8-6 4V20h12v-1.5Z"/>
+        <path d="M10 12.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>
+        <path d="M20 20v-1.4c0-1.6-1.6-3-3.9-3.6"/>
+        <path d="M15.8 7.2a3.3 3.3 0 0 1 0 6.3"/>
+      </svg>
+      Thành viên
     </button>
     <button class="nav-item" id="nav-glossary" onclick="showView('glossary',this)">
       <span>◎</span> DoD Glossary
@@ -99,6 +107,8 @@
       <div class="panel" id="leaderboard"></div>
     </div>
   </div>
+
+  <div class="view" id="view-members"><div id="members-content"></div></div>
 
   <div class="view" id="view-detail"><div id="detail-content"></div></div>
   <div class="view" id="view-glossary"><div id="glossary-content"></div></div>

@@ -1,4 +1,4 @@
-# RQI Tracker (split site)
+# Research Quality Index (split site)
 
 This folder is a split version of `rqi-tracker.html`:
 

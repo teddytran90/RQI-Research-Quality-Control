@@ -210,8 +210,10 @@ const GROUPS={
 };
 
 let S={projects:[],members:[],filterMember:'',cur:null,view:'dashboard'};
+let _detailDirty=false;
 
 async function load(){
+  // Load app data from the API when available, otherwise fall back to localStorage.
   try{
     const r=await fetch('/api/data',{credentials:'include'});
     if(!r.ok) throw new Error('load failed');
@@ -219,13 +221,24 @@ async function load(){
     const p=j?.payload||{};
     S.projects=Array.isArray(p.projects)?p.projects:[];
     S.members=Array.isArray(p.members)?p.members:[];
+    try{localStorage.setItem('rqi_data_v1',JSON.stringify({payload:{projects:S.projects,members:S.members}}))}catch(e){}
   } catch(e){
-    S.projects=[];S.members=[];
+    try{
+      const raw=localStorage.getItem('rqi_data_v1');
+      const j=raw?JSON.parse(raw):null;
+      const p=j?.payload||{};
+      S.projects=Array.isArray(p.projects)?p.projects:[];
+      S.members=Array.isArray(p.members)?p.members:[];
+    } catch(e2){
+      S.projects=[];S.members=[];
+    }
   }
 }
 
 let _saveTimer=null;
 async function save(){
+  // Persist app data locally; best-effort sync to the API.
+  try{localStorage.setItem('rqi_data_v1',JSON.stringify({payload:{projects:S.projects,members:S.members}}))}catch(e){}
   if(_saveTimer) clearTimeout(_saveTimer);
   _saveTimer=setTimeout(async()=>{
     try{
@@ -294,11 +307,11 @@ function verdict(p){
   const gs=gateScore(p);
   const blocks=hardBlocks(p);
   const anyFail=blocks.some(b=>!b.pass);
-  if(anyFail) return {key:'block',label:'BỊ CHẶN — Không đủ điều kiện bàn giao',short:'Bị chặn',icon:'⛔',bannerCls:'vb-block',cardCls:'cv-block',color:'var(--red)',desc:'Có ít nhất 1 điều kiện bắt buộc chưa đạt. Cần bổ sung trước khi nộp lên hội đồng.'};
-  if(gs>=85) return {key:'pass-hi',label:'XUẤT SẮc — Bàn giao không điều kiện',short:'Xuất sắc',icon:'✅',bannerCls:'vb-pass-hi',cardCls:'cv-pass-hi',color:'var(--green)',desc:'Chất lượng xuất sắc. Nghiên cứu này có thể dùng làm mẫu tham chiếu cho nhóm.'};
-  if(gs>=70) return {key:'pass',label:'ĐẠT — Đủ điều kiện bàn giao',short:'Đạt',icon:'🟢',bannerCls:'vb-pass',cardCls:'cv-pass',color:'var(--accent)',desc:'Đủ điều kiện bàn giao. Người đánh giá ghi lại 1–2 điểm cần cải thiện cho lần sau (không yêu cầu làm lại).'};
-  if(gs>=55) return {key:'cond',label:'CÓ ĐIỀU KIỆN — Cần sửa trước khi bàn giao',short:'Có điều kiện',icon:'⚠️',bannerCls:'vb-cond',cardCls:'cv-cond',color:'var(--amber)',desc:'Gate Score 55–69%. Phải fix các điểm Critical/Major. Hội đồng họp ngắn với researcher trước khi approve.'};
-  return {key:'block',label:'BLOCK — Không đủ điều kiện bàn giao',short:'Block',icon:'⛔',bannerCls:'vb-block',cardCls:'cv-block',color:'var(--red)',desc:'Gate Score dưới 55%. Researcher bổ sung và submit lại. Ghi rõ lý do block.'};
+  if(anyFail) return {key:'block',label:'Bị chặn — Không đủ điều kiện bàn giao',short:'Bị chặn',icon:'⛔',bannerCls:'vb-block',cardCls:'cv-block',color:'var(--red)',desc:'Có ít nhất 1 điều kiện bắt buộc chưa đạt. Cần bổ sung trước khi nộp lên hội đồng.'};
+  if(gs>=85) return {key:'pass-hi',label:'Xuất sắc — Bàn giao không điều kiện',short:'Xuất sắc',icon:'✅',bannerCls:'vb-pass-hi',cardCls:'cv-pass-hi',color:'var(--green)',desc:'Chất lượng xuất sắc. Nghiên cứu này có thể dùng làm mẫu tham chiếu cho nhóm.'};
+  if(gs>=70) return {key:'pass',label:'Đạt — Đủ điều kiện bàn giao',short:'Đạt',icon:'🟢',bannerCls:'vb-pass',cardCls:'cv-pass',color:'var(--accent)',desc:'Đủ điều kiện bàn giao. Người đánh giá ghi lại 1–2 điểm cần cải thiện cho lần sau (không yêu cầu làm lại).'};
+  if(gs>=55) return {key:'cond',label:'Có điều kiện — Cần sửa trước khi bàn giao',short:'Có điều kiện',icon:'⚠️',bannerCls:'vb-cond',cardCls:'cv-cond',color:'var(--amber)',desc:'Gate Score 55–69%. Phải fix các điểm Critical/Major. Hội đồng họp ngắn với researcher trước khi approve.'};
+  return {key:'block',label:'Block — Không đủ điều kiện bàn giao',short:'Block',icon:'⛔',bannerCls:'vb-block',cardCls:'cv-block',color:'var(--red)',desc:'Gate Score dưới 55%. Researcher bổ sung và submit lại. Ghi rõ lý do block.'};
 }
 
 function dod(p){const g=gd(p);if(!g||!g.dod.length)return 0;return Math.round((p.dodChecked||[]).length/g.dod.length*100)}
@@ -320,20 +333,84 @@ function showView(name,btn){
   if(name==='dashboard')renderDash();
   if(name==='all')renderAll();
   if(name==='compare')renderCompare();
+  if(name==='members')renderMembersPage();
   if(name==='glossary')renderGlossary(null,null);
+}
+
+function renderMembersPage(){
+  const root=document.getElementById('members-content');
+  if(!root) return;
+  root.innerHTML=`
+    <div class="page-header">
+      <div class="page-title">Quản lý thành viên</div>
+      <div class="page-sub">Danh sách thành viên được lưu lại trên thiết bị (persist qua refresh).</div>
+    </div>
+    <div class="panel" style="max-width:780px">
+      <div class="sec-label" style="margin-bottom:10px">Danh sách</div>
+      <div id="members-page-list"></div>
+      <div class="sec-label" style="margin:16px 0 10px">Thêm thành viên</div>
+      <div class="frow" style="grid-template-columns:1fr 1fr;align-items:end">
+        <div class="fg" style="margin-bottom:10px">
+          <label class="fl">Tên thành viên *</label>
+          <input class="fi" id="pm-name" placeholder="Tên thành viên"/>
+        </div>
+        <div class="fg" style="margin-bottom:10px">
+          <label class="fl">Vai trò</label>
+          <input type="hidden" id="pm-role" value="UX/UI Designer"/>
+          <div class="role-radios" role="radiogroup" aria-label="Vai trò thành viên">
+            <label class="role-radio">
+              <input type="radio" name="pm-role-radio" value="UX/UI Designer" checked onchange="setPmRole(this.value)"/>
+              <span>UX/UI Designer</span>
+            </label>
+            <label class="role-radio">
+              <input type="radio" name="pm-role-radio" value="Strategic Designer" onchange="setPmRole(this.value)"/>
+              <span>Strategic Designer</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="m-actions" style="margin-top:14px">
+        <button class="btn btn-primary" onclick="addMemberFromPage()">Thêm thành viên</button>
+      </div>
+    </div>
+  `;
+  renderMembersPageList();
+  setTimeout(()=>document.getElementById('pm-name')?.focus(),50);
+}
+
+function renderMembersPageList(){
+  const el=document.getElementById('members-page-list');
+  if(!el) return;
+  el.innerHTML=S.members.length
+    ?S.members.map((m,i)=>{const col=MCOLORS[i%MCOLORS.length];const init=m.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();return`<div class="m-row"><div class="m-av" style="background:${col};width:28px;height:28px;font-size:11px">${init}</div><div class="m-name">${m.name}</div><div class="m-role">${m.role||''}</div><button class="btn btn-danger btn-sm btn-icon" onclick="removeMember('${m.id}')">×</button></div>`}).join('')
+    :`<div style="font-size:12px;color:var(--text3);padding:8px 0 12px">Chưa có thành viên. Thêm bên dưới.</div>`;
 }
 
 function showDetail(id){
   S.cur=S.projects.find(p=>p.id===id);
   if(!S.cur)return;
+  _detailDirty=false;
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-detail').classList.add('active');
   renderDetail();
 }
 
+function markDetailDirty(){
+  _detailDirty=true;
+}
+
+function commitDetail(){
+  if(!_detailDirty) return;
+  _detailDirty=false;
+  save();
+  renderSidebar();
+  renderDetail();
+}
+
 function renderMemberBar(){
   const bar=document.getElementById('member-bar');
+  if(!bar) return;
   if(!S.members.length){bar.innerHTML='';return}
   bar.innerHTML=S.members.map((m,i)=>{
     const col=MCOLORS[i%MCOLORS.length];
@@ -359,7 +436,8 @@ function renderSidebar(){
     const gs=gateScore(p);const v=verdict(p);const m=mb(p.ownerId);const col=m?mc(p.ownerId):'';const init=m?mi(p.ownerId):'';
     return`<div class="proj-item${S.cur?.id===p.id?' sel':''}" onclick="showDetail('${p.id}')">
       <div class="pj-name">${p.name}</div>
-      <div class="pj-row"><span class="pj-type">${p.roleType==='uiux'?'UX/UI':'CHIẾN LƯỢC'}</span>${m?`<div class="m-av" style="background:${col};width:14px;height:14px;font-size:14px">${init}</div>`:''}<span class="pj-rqi" style="color:${v.color}">${gs}%</span><span style="font-size:14px">${v.icon}</span></div>
+      <div class="pj-row"><span class="pj-type">${p.roleType==='uiux'?'UX/UI':'CHIẾN LƯỢC'}</span><span class="pj-rqi" style="color:${v.color}">${gs}%</span><span style="font-size:14px">${v.icon}</span></div>
+      ${m?`<div class="pj-sub"><span class="pj-type">${m.name}</span></div>`:''}
     </div>`;
   }).join('');
 }
@@ -533,6 +611,7 @@ function renderDetail(){
       <button class="btn btn-ghost btn-sm" onclick="showView('dashboard')">← Quay lại</button>
       <select class="cmp-sel" style="width:120px;font-size:11px" onchange="updStatus(this.value)">${['draft','active','review','done'].map(s=>`<option value="${s}"${p.status===s?' selected':''}>${stL[s]}</option>`).join('')}</select>
       <select class="cmp-sel" style="width:130px;font-size:11px" onchange="updOwner(this.value)"><option value="">— Unassigned —</option>${S.members.map(m=>`<option value="${m.id}"${p.ownerId===m.id?' selected':''}>${m.name}</option>`).join('')}</select>
+      <button class="btn btn-primary btn-sm"${_detailDirty?'':' disabled'} onclick="commitDetail()">Khởi tạo</button>
     </div>
 
     <div style="margin-bottom:6px">
@@ -636,19 +715,19 @@ function renderDetail(){
   renderSidebar();
 }
 
-function tDod(id){const p=S.cur;if(!p)return;p.dodChecked=p.dodChecked||[];const i=p.dodChecked.indexOf(id);if(i>-1)p.dodChecked.splice(i,1);else p.dodChecked.push(id);save();renderDetail()}
-function tStar(qid,s){const p=S.cur;if(!p)return;p.qualRatings=p.qualRatings||{};p.qualRatings[qid]=s;save();renderDetail()}
-function tGate(gid){const p=S.cur;if(!p)return;p.gatesPassed=p.gatesPassed||[];p.gateDates=p.gateDates||{};const i=p.gatesPassed.indexOf(gid);if(i>-1){p.gatesPassed.splice(i,1);delete p.gateDates[gid]}else{p.gatesPassed.push(gid);p.gateDates[gid]=new Date().toLocaleDateString('vi-VN')};save();renderDetail()}
-function tAdopt(v){const p=S.cur;if(!p)return;p.adoptionRate=Math.max(0,Math.min(100,parseInt(v)||0));save();renderDetail()}
-function tNotes(v){const p=S.cur;if(!p)return;p.notes=v;save()}
-function updStatus(v){const p=S.cur;if(!p)return;p.status=v;save();renderSidebar()}
-function updOwner(v){const p=S.cur;if(!p)return;p.ownerId=v;save();renderSidebar()}
+function tDod(id){const p=S.cur;if(!p)return;p.dodChecked=p.dodChecked||[];const i=p.dodChecked.indexOf(id);if(i>-1)p.dodChecked.splice(i,1);else p.dodChecked.push(id);markDetailDirty();renderDetail()}
+function tStar(qid,s){const p=S.cur;if(!p)return;p.qualRatings=p.qualRatings||{};p.qualRatings[qid]=s;markDetailDirty();renderDetail()}
+function tGate(gid){const p=S.cur;if(!p)return;p.gatesPassed=p.gatesPassed||[];p.gateDates=p.gateDates||{};const i=p.gatesPassed.indexOf(gid);if(i>-1){p.gatesPassed.splice(i,1);delete p.gateDates[gid]}else{p.gatesPassed.push(gid);p.gateDates[gid]=new Date().toLocaleDateString('vi-VN')};markDetailDirty();renderDetail()}
+function tAdopt(v){const p=S.cur;if(!p)return;p.adoptionRate=Math.max(0,Math.min(100,parseInt(v)||0));markDetailDirty();renderDetail()}
+function tNotes(v){const p=S.cur;if(!p)return;p.notes=v;markDetailDirty()}
+function updStatus(v){const p=S.cur;if(!p)return;p.status=v;markDetailDirty();renderSidebar()}
+function updOwner(v){const p=S.cur;if(!p)return;p.ownerId=v;markDetailDirty();renderSidebar()}
 function addComment(){
   const p=S.cur;if(!p)return;
   const text=document.getElementById('c-ta')?.value?.trim();if(!text)return;
   p.comments=p.comments||[];
   p.comments.push({id:'c'+Date.now(),text,type:document.getElementById('c-type')?.value||'note',memberId:document.getElementById('c-member')?.value||'',createdAt:new Date().toISOString()});
-  save();renderDetail();
+  markDetailDirty();renderDetail();
 }
 function delProject(){
   if(!confirm('Xóa nghiên cứu này? Hành động không thể hoàn tác.'))return;
@@ -686,10 +765,38 @@ function renderMembersModal(){
     :`<div style="font-size:12px;color:var(--text3);padding:8px 0 12px">Chưa có thành viên. Thêm bên dưới.</div>`;
 }
 function addMember(){const name=document.getElementById('nm-name').value.trim();if(!name)return;S.members.push({id:'m'+Date.now(),name,role:document.getElementById('nm-role').value.trim()});document.getElementById('nm-name').value='';document.getElementById('nm-role').value='UX/UI Designer';document.querySelectorAll('input[name="nm-role-radio"]').forEach(r=>r.checked = r.value === 'UX/UI Designer');save();renderMembersModal();renderMemberBar()}
-function removeMember(id){if(!confirm('Xóa thành viên này?'))return;S.members=S.members.filter(m=>m.id!==id);save();renderMembersModal();renderMemberBar()}
+function removeMember(id){
+  if(!confirm('Xóa thành viên này?'))return;
+  S.members=S.members.filter(m=>m.id!==id);
+  save();
+  renderMembersModal();
+  renderMembersPageList();
+  renderMemberBar();
+  renderSidebar();
+}
+
+function addMemberFromPage(){
+  const name=document.getElementById('pm-name')?.value?.trim();
+  if(!name) return;
+  const role=document.getElementById('pm-role')?.value?.trim()||'';
+  S.members.push({id:'m'+Date.now(),name,role});
+  document.getElementById('pm-name').value='';
+  document.getElementById('pm-role').value='UX/UI Designer';
+  document.querySelectorAll('input[name="pm-role-radio"]').forEach(r=>r.checked = r.value === 'UX/UI Designer');
+  save();
+  renderMembersPageList();
+  renderMemberBar();
+  if(S.view==='members') renderSidebar();
+}
 
 function setNmRole(roleLabel){
   const el=document.getElementById('nm-role');
+  if(!el) return;
+  el.value=roleLabel;
+}
+
+function setPmRole(roleLabel){
+  const el=document.getElementById('pm-role');
   if(!el) return;
   el.value=roleLabel;
 }

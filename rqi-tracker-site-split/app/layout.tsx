@@ -11,7 +11,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           rel="stylesheet"
         />
         <link rel="stylesheet" href="/assets/styles.css" />
-        <title>RQI Trình theo dõi chất lượng nghiên cứu</title>
+        <title>Research Quality Index</title>
       </head>
       <body>{children}</body>
     </html>
