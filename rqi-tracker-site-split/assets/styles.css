@@ -2,6 +2,10 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--body);font-size:14px;line-height:1.5}
 button,input,select,textarea{font-family:var(--body)}
+.icon{width:16px;height:16px;display:inline-block;flex-shrink:0}
+.btn .icon{margin-right:6px}
+.gl-link .icon{margin-left:0}
+.icon path{fill:currentColor}
 ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 .app{display:grid;grid-template-columns:256px 1fr;grid-template-rows:100px 1fr;height:100vh;overflow:hidden}
 .topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);background:var(--bg2);z-index:10;gap:12px;height:100px}
@@ -91,6 +95,13 @@ button,input,select,textarea{font-family:var(--body)}
 .cbr-val{font-family:var(--mono);font-size:14px;color:var(--text3);width:34px;text-align:right;flex-shrink:0}
 .detail-header{display:flex;align-items:flex-start;gap:16px;margin-bottom:22px}
 .dh-nav{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.dh-nav .btn,.dh-nav .cmp-sel{height:40px}
+.dh-nav .btn{display:inline-flex;align-items:center;justify-content:center;padding-top:0;padding-bottom:0}
+.dh-nav .btn-ghost{gap:6px}
+.dh-nav .btn-ghost .icon{margin-right:0}
+.dh-nav .cmp-sel{padding-top:0;padding-bottom:0}
+.dh-nav .dh-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.dh-nav .dh-commit{margin-left:12px;width:120px}
 .detail-title{font-family:var(--head);font-size:20px;font-weight:700;margin-bottom:6px;line-height:1.2}
 .detail-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
 .detail-obj{font-size:14px;color:var(--text3);line-height:1.6;max-width:520px;margin-top:6px}
@@ -180,12 +191,12 @@ button,input,select,textarea{font-family:var(--body)}
 .lbr-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
 .lbr-row:last-child{border-bottom:none}
 /* ── GLOSSARY PAGE ── */
-.gl-link{font-family:var(--mono);font-size:14px;color:var(--accent);text-decoration:none;letter-spacing:.3px;padding:1px 6px;border-radius:3px;border:1px solid rgba(79,116,255,.3);transition:.12s;white-space:nowrap;cursor:pointer}
+.gl-link{display:inline-flex;align-items:center;gap:6px;font-family:var(--body);font-size:14px;font-weight:400;color:var(--accent);text-decoration:none;letter-spacing:0;padding:0;border:none;transition:.12s;white-space:nowrap;cursor:pointer;text-transform:none}
 .gl-link:hover{background:rgba(79,116,255,.12);border-color:var(--accent)}
 .gl-group-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
 .gl-tab{padding:5px 13px;border-radius:20px;font-size:14px;cursor:pointer;border:1.5px solid var(--border2);color:var(--text2);background:transparent;transition:.12s;white-space:nowrap}
 .gl-tab:hover{background:var(--bg3);color:var(--text)}
-.gl-tab.on{border-color:transparent}
+.gl-tab.on{background:#fff !important;color:#000 !important;border-color:#fff !important}
 .gl-item{border:1px solid var(--border);border-radius:var(--r2);margin-bottom:10px;overflow:hidden}
 .gl-item-header{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;transition:.1s;user-select:none}
 .gl-item-header:hover{background:var(--bg3)}

@@ -88,7 +88,7 @@
       <div><div class="page-title">Tất cả nghiên cứu</div><div class="page-sub" id="all-sub">Hiển thị tất cả nghiên cứu</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <select class="cmp-sel" style="width:130px;font-size:11px" id="f-type" onchange="renderAll()"><option value="">Tất cả loại</option><option value="uiux">UX/UI Designer</option><option value="uxr">Strategic Researcher</option></select>
-        <select class="cmp-sel" style="width:118px;font-size:11px" id="f-status" onchange="renderAll()"><option value="">Tất cả trạng thái</option><option value="draft">Nháp</option><option value="active">Đang thực hiện</option><option value="review">Đang review</option><option value="done">Hoàn thành</option></select>
+        <select class="cmp-sel" style="width:118px;font-size:11px" id="f-status" onchange="renderAll()"><option value="">Tất cả trạng thái</option><option value="open">Open</option><option value="active">Active</option><option value="review">In Review</option><option value="done">Done</option><option value="reject">Reject</option></select>
         <select class="cmp-sel" style="width:128px;font-size:11px" id="f-member" onchange="renderAll()"><option value="">Tất cả thành viên</option></select>
       </div>
     </div>
@@ -136,7 +136,7 @@
     </div>
     <div class="fg"><label class="fl">Nhóm nghiên cứu *</label><select class="fs" id="fn-group"></select></div>
     <div class="frow">
-      <div class="fg"><label class="fl">Trạng thái</label><select class="fs" id="fn-status"><option value="draft">Nháp</option><option value="active" selected>Active</option><option value="review">In Review</option><option value="done">Done</option></select></div>
+      <div class="fg"><label class="fl">Trạng thái</label><select class="fs" id="fn-status"><option value="open" selected>Open</option><option value="active">Active</option><option value="review">In Review</option><option value="done">Done</option></select></div>
       <div class="fg"><label class="fl">Ngày bắt đầu</label><input class="fi" type="date" id="fn-date"/></div>
     </div>
     <div class="fg"><label class="fl">Người phụ trách</label><select class="fs" id="fn-owner"><option value="">— Chưa phân công —</option></select></div>

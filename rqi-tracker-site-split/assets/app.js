@@ -1,4 +1,6 @@
 const MCOLORS=['#FFC709','#27c47e','#f0a020','#e0404f','#8b6fff','#18c49a','#e05090','#f06030'];
+const ICON_CHEVRON_LEFT=`<svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path fill-rule="evenodd" clip-rule="evenodd" d="M16.0303 19.5303C16.3232 19.2374 16.3232 18.7626 16.0303 18.4697L9.56066 12L16.0303 5.53033C16.3232 5.23744 16.3232 4.76256 16.0303 4.46967C15.7374 4.17678 15.2626 4.17678 14.9697 4.46967L7.96967 11.4697C7.67678 11.7626 7.67678 12.2374 7.96967 12.5303L14.9697 19.5303C15.2626 19.8232 15.7374 19.8232 16.0303 19.5303Z" fill="currentColor"/></svg>`;
+const ICON_CHEVRON_RIGHT=`<svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path fill-rule="evenodd" clip-rule="evenodd" d="M7.96967 19.5303C7.67678 19.2374 7.67678 18.7626 7.96967 18.4697L14.4393 12L7.96967 5.53033C7.67678 5.23744 7.67678 4.76256 7.96967 4.46967C8.26256 4.17678 8.73744 4.17678 9.03033 4.46967L16.0303 11.4697C16.3232 11.7626 16.3232 12.2374 16.0303 12.5303L9.03033 19.5303C8.73744 19.8232 8.26256 19.8232 7.96967 19.5303Z" fill="currentColor"/></svg>`;
 const GATES=[
   {id:'g1',name:'Briefing trước nghiên cứu',desc:'Câu hỏi nghiên cứu, phương pháp, kế hoạch mẫu & phê duyệt stakeholder TRƯỚC khi ra thực địa'},
   {id:'g2',name:'Kiểm tra giữa nghiên cứu',desc:'Xem xét độ đủ mẫu, chủ đề ban đầu, gắn cờ sai lệch sau 40–50% công việc thực địa'},
@@ -233,6 +235,12 @@ async function load(){
       S.projects=[];S.members=[];
     }
   }
+  // Normalize legacy statuses to the new workflow.
+  S.projects.forEach(p=>{
+    if(p.status==='draft') p.status='open';
+    if(p.pending==null) p.pending=false;
+    if(p.reviewUpdateCount==null) p.reviewUpdateCount=0;
+  });
 }
 
 let _saveTimer=null;
@@ -250,6 +258,14 @@ async function save(){
       });
     } catch(e){}
   },250);
+}
+
+function canEditProject(p){
+  return !!p && p.status!=='done' && p.status!=='reject';
+}
+
+function isPendingProject(p){
+  return !!p && p.pending===true;
 }
 function gd(p){return(GROUPS[p.roleType]||[]).find(g=>g.id===p.groupId)}
 
@@ -322,7 +338,10 @@ function mc(id){const i=S.members.findIndex(m=>m.id===id);return MCOLORS[i>=0?i%
 function mi(id){const m=mb(id);return m?m.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase():'?'}
 function av(id,sz=22){const m=mb(id);if(!m)return'';return`<div class="m-av" style="background:${mc(id)};width:${sz}px;height:${sz}px;font-size:${Math.round(sz*.42)}px">${mi(id)}</div>`}
 function rt(iso){const d=(Date.now()-new Date(iso))/1000;if(d<60)return'just now';if(d<3600)return Math.floor(d/60)+'m ago';if(d<86400)return Math.floor(d/3600)+'h ago';return Math.floor(d/86400)+'d ago'}
-function fps(){return S.filterMember?S.projects.filter(p=>p.ownerId===S.filterMember):S.projects}
+function fps(){
+  const visible=S.projects.filter(p=>!isPendingProject(p));
+  return S.filterMember?visible.filter(p=>p.ownerId===S.filterMember):visible;
+}
 
 function showView(name,btn){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -397,15 +416,42 @@ function showDetail(id){
 }
 
 function markDetailDirty(){
+  if(!canEditProject(S.cur)) return;
   _detailDirty=true;
 }
 
 function commitDetail(){
   if(!_detailDirty) return;
+  if(!S.cur) return;
+  // First commit after creating a pending project = "Khởi tạo" (does not count as a review update).
+  if(S.cur.pending){
+    S.cur.pending=false;
+    _detailDirty=false;
+    save();
+    renderSidebar();
+    renderDetail();
+    return;
+  }
+  // Review state: allow at most 4 updates; 5th turns into Reject.
+  if(S.cur.status==='review'){
+    const n=(S.cur.reviewUpdateCount||0)+1;
+    S.cur.reviewUpdateCount=n;
+    if(n>4){
+      S.cur.status='reject';
+    }
+  }
   _detailDirty=false;
   save();
   renderSidebar();
   renderDetail();
+}
+
+function cancelInit(){
+  if(!S.cur || !S.cur.pending) return;
+  S.projects=S.projects.filter(p=>p.id!==S.cur.id);
+  S.cur=null;
+  _detailDirty=false;
+  showView('dashboard',document.getElementById('nav-dashboard'));
 }
 
 function renderMemberBar(){
@@ -430,8 +476,9 @@ function toggleFilter(id){
 }
 
 function renderSidebar(){
-  document.getElementById('badge-all').textContent=S.projects.length;
-  const recent=[...S.projects].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,10);
+  const visible=S.projects.filter(p=>!isPendingProject(p));
+  document.getElementById('badge-all').textContent=visible.length;
+  const recent=[...visible].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,10);
   document.getElementById('sidebar-list').innerHTML=recent.map(p=>{
     const gs=gateScore(p);const v=verdict(p);const m=mb(p.ownerId);const col=m?mc(p.ownerId):'';const init=m?mi(p.ownerId):'';
     return`<div class="proj-item${S.cur?.id===p.id?' sel':''}" onclick="showDetail('${p.id}')">
@@ -445,8 +492,8 @@ function renderSidebar(){
 function projCard(p){
   const gs=gateScore(p);const r=rqi(p);const d=dod(p);const g=gd(p);const col=g?.color||'var(--accent)';
   const v=verdict(p);
-  const stC={draft:'t-draft',active:'t-active',review:'t-review',done:'t-done'};
-  const stL={draft:'Nháp',active:'Đang thực hiện',review:'Đang review',done:'Hoàn thành'};
+  const stC={open:'t-draft',active:'t-active',review:'t-review',done:'t-done',reject:'t-draft'};
+  const stL={open:'Open',active:'Active',review:'In Review',done:'Done',reject:'Reject'};
   const m=mb(p.ownerId);const mc2=m?mc(p.ownerId):'';const mi2=m?mi(p.ownerId):'';
   const cc=(p.comments||[]).length;
   return`<div class="proj-card" onclick="showDetail('${p.id}')" style="border-color:${v.key==='block'?'rgba(224,64,79,.25)':v.key==='pass-hi'?'rgba(39,196,126,.2)':''}">
@@ -533,7 +580,7 @@ function renderAll(){
   const me=document.getElementById('f-member')?.value||'';
   const fmEl=document.getElementById('f-member');
   if(fmEl){const pv=fmEl.value;fmEl.innerHTML='<option value="">Tất cả thành viên</option>'+S.members.map(m=>`<option value="${m.id}"${m.id===pv?' selected':''}>${m.name}</option>`).join('');fmEl.value=pv}
-  const f=S.projects.filter(p=>(!ty||p.roleType===ty)&&(!st||p.status===st)&&(!me||p.ownerId===me));
+  const f=S.projects.filter(p=>!isPendingProject(p) && (!ty||p.roleType===ty)&&(!st||p.status===st)&&(!me||p.ownerId===me));
   const sub=document.getElementById('all-sub');if(sub)sub.textContent=`Hiển thị ${f.length} / ${S.projects.length} nghiên cứu`;
   document.getElementById('all-cards').innerHTML=f.length?f.map(projCard).join(''):`<div class="empty" style="grid-column:1/-1"><div class="empty-icon">◫</div><div class="empty-title">Không có kết quả</div><div class="empty-sub">Thử thay đổi filter hoặc tạo research mới</div></div>`;
 }
@@ -584,22 +631,25 @@ function renderLeaderboard(){
 
 function renderDetail(){
   const p=S.cur;if(!p)return;
+  const canEdit=canEditProject(p);
+  const isPending=isPendingProject(p);
+  const backAction=canEdit?{label:'Cancel',onclick:'cancelInit()'}:{label:'Quay lại',onclick:"showView('dashboard')"};
   const g=gd(p),gs=gateScore(p),r=rqi(p),d=dod(p),v=verdict(p);
-  const stL={draft:'Draft',active:'Active',review:'In Review',done:'Done'};
-  const stC={draft:'t-draft',active:'t-active',review:'t-review',done:'t-done'};
+  const stL={open:'Open',active:'Active',review:'In Review',done:'Done',reject:'Reject'};
+  const stC={open:'t-draft',active:'t-active',review:'t-review',done:'t-done',reject:'t-draft'};
   const adopt=p.adoptionRate||0;
   const rs=Object.values(p.qualRatings||{});const avgQ=rs.length?Math.round(rs.reduce((a,b)=>a+b,0)/rs.length*20):0;
   const blocks=hardBlocks(p);
   const dodPctCore=g?Math.round(g.dod.filter(x=>x.core&&(p.dodChecked||[]).includes(x.id)).length/Math.max(g.dod.filter(x=>x.core).length,1)*100):0;
 
-  const dodH=(g?.dod||[]).map(item=>{const chk=(p.dodChecked||[]).includes(item.id);return`<div class="dod-item" onclick="tDod('${item.id}')">
+  const dodH=(g?.dod||[]).map(item=>{const chk=(p.dodChecked||[]).includes(item.id);return`<div class="dod-item"${canEdit?` onclick="tDod('${item.id}')"`:''}>
     <div class="dod-cb${chk?' chk':''}${item.core?' core':''}"><svg width="8" height="6" viewBox="0 0 8 6"><path d="M1 3L3 5.5L7 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
     <div class="dod-text${chk?' chk':''}">${item.text}</div>${item.core?'<div class="core-pill">CORE</div>':''}
   </div>`}).join('');
 
-  const qualH=(g?.qual||[]).map(q=>{const rv=(p.qualRatings||{})[q.id]||0;const warn=rv===1?'border-color:rgba(224,64,79,.4);background:rgba(224,64,79,.04)':'';return`<div class="qual-item" style="${warn}"><div class="qual-head"><div class="qual-name">${q.name}${rv===1?' <span style="font-size:9px;color:var(--red)">⚠ Critical</span>':''}</div><div class="stars">${[1,2,3,4,5].map(s=>`<span class="star${s<=rv?' on':''}" onclick="tStar('${q.id}',${s})">★</span>`).join('')}</div></div><div class="qual-desc">${q.desc}</div></div>`}).join('');
+  const qualH=(g?.qual||[]).map(q=>{const rv=(p.qualRatings||{})[q.id]||0;const warn=rv===1?'border-color:rgba(224,64,79,.4);background:rgba(224,64,79,.04)':'';return`<div class="qual-item" style="${warn}"><div class="qual-head"><div class="qual-name">${q.name}${rv===1?' <span style="font-size:9px;color:var(--red)">⚠ Critical</span>':''}</div><div class="stars">${[1,2,3,4,5].map(s=>`<span class="star${s<=rv?' on':''}"${canEdit?` onclick="tStar('${q.id}',${s})"`:''}>★</span>`).join('')}</div></div><div class="qual-desc">${q.desc}</div></div>`}).join('');
 
-  const gateH=GATES.map((gate,i)=>{const pass=(p.gatesPassed||[]).includes(gate.id);const dt=(p.gateDates||{})[gate.id]||'';const required=gate.id==='g1'||gate.id==='g3';return`<div class="gate-item" onclick="tGate('${gate.id}')" style="${required&&!pass?'border-color:rgba(224,64,79,.3)':''}"><div class="gate-num${pass?' pass':''}">${pass?'✓':i+1}</div><div class="gate-info"><div class="gate-name">${gate.name}${required?'<span style="font-family:var(--mono);font-size:8px;color:var(--amber);margin-left:5px">BẮT BUỘC</span>':''}</div><div class="gate-desc">${gate.desc}</div></div>${dt?`<div class="gate-date">${dt}</div>`:''}</div>`}).join('');
+  const gateH=GATES.map((gate,i)=>{const pass=(p.gatesPassed||[]).includes(gate.id);const dt=(p.gateDates||{})[gate.id]||'';const required=gate.id==='g1'||gate.id==='g3';return`<div class="gate-item"${canEdit?` onclick="tGate('${gate.id}')"`:''} style="${required&&!pass?'border-color:rgba(224,64,79,.3)':''}"><div class="gate-num${pass?' pass':''}">${pass?'✓':i+1}</div><div class="gate-info"><div class="gate-name">${gate.name}${required?'<span style="font-family:var(--mono);font-size:8px;color:var(--amber);margin-left:5px">BẮT BUỘC</span>':''}</div><div class="gate-desc">${gate.desc}</div></div>${dt?`<div class="gate-date">${dt}</div>`:''}</div>`}).join('');
 
   function rcBar(l,v2,col,w,note=''){return`<div class="rcr"><div class="rcr-head"><span class="rcr-lbl">${l} ${note?`<span style="font-size:9px;color:var(--text3)">${note}</span>`:''}</span><span class="rcr-val">${v2}% <span style="font-size:9px;color:var(--text3)">×${w}</span></span></div><div class="rcr-track"><div class="rcr-fill" style="width:${v2}%;background:${col}"></div></div></div>`}
 
@@ -608,10 +658,12 @@ function renderDetail(){
 
   document.getElementById('detail-content').innerHTML=`
     <div class="dh-nav" style="margin-bottom:14px">
-      <button class="btn btn-ghost btn-sm" onclick="showView('dashboard')">← Quay lại</button>
-      <select class="cmp-sel" style="width:120px;font-size:11px" onchange="updStatus(this.value)">${['draft','active','review','done'].map(s=>`<option value="${s}"${p.status===s?' selected':''}>${stL[s]}</option>`).join('')}</select>
-      <select class="cmp-sel" style="width:130px;font-size:11px" onchange="updOwner(this.value)"><option value="">— Unassigned —</option>${S.members.map(m=>`<option value="${m.id}"${p.ownerId===m.id?' selected':''}>${m.name}</option>`).join('')}</select>
-      <button class="btn btn-primary btn-sm"${_detailDirty?'':' disabled'} onclick="commitDetail()">Khởi tạo</button>
+      <button class="btn btn-ghost btn-sm" onclick="${isPending?'cancelInit()':backAction.onclick}">${ICON_CHEVRON_LEFT}${isPending?'Cancel':backAction.label}</button>
+      <div class="dh-right">
+        <select class="cmp-sel" style="width:120px;font-size:11px" onchange="updStatus(this.value)"${canEdit?'':' disabled'}>${['open','active','review','done','reject'].map(s=>`<option value="${s}"${p.status===s?' selected':''}>${stL[s]}</option>`).join('')}</select>
+        <select class="cmp-sel" style="width:130px;font-size:11px" onchange="updOwner(this.value)"${canEdit?'':' disabled'}><option value="">— Unassigned —</option>${S.members.map(m=>`<option value="${m.id}"${p.ownerId===m.id?' selected':''}>${m.name}</option>`).join('')}</select>
+      </div>
+      ${canEdit?`<button class="btn btn-primary btn-sm dh-commit"${_detailDirty?'':' disabled'} onclick="commitDetail()">${isPending?'Khởi tạo':'Cập nhật'}</button>`:''}
     </div>
 
     <div style="margin-bottom:6px">
@@ -647,7 +699,7 @@ function renderDetail(){
     </div>
 
     <div class="detail-body">
-      <div class="panel"><div class="panel-title">Tiêu chí hoàn thành (DoD) <span class="ptl"></span><span class="gl-link" onclick="openGlossary('${p.groupId}','${p.roleType}')">Xem giải nghĩa →</span><span style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-left:8px">Core ${dodPctCore}% · All ${d}%</span></div>${dodH}</div>
+      <div class="panel"><div class="panel-title">Tiêu chí hoàn thành (DoD) <span class="ptl"></span><span class="gl-link" onclick="openGlossary('${p.groupId}','${p.roleType}')">Xem giải nghĩa ${ICON_CHEVRON_RIGHT}</span><span style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-left:8px">Core ${dodPctCore}% · All ${d}%</span></div>${dodH}</div>
       <div style="display:flex;flex-direction:column;gap:12px">
         <div class="panel"><div class="panel-title">Tiêu chí chất lượng <span class="ptl"></span><span style="font-family:var(--mono);font-size:9px;color:var(--text3)">Avg ${avgQ}%</span></div>${qualH}</div>
         <div class="panel"><div class="panel-title">Cổng kiểm soát <span class="ptl"></span><span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${(p.gatesPassed||[]).length}/ 3 đã qua</span></div>${gateH}</div>
@@ -667,7 +719,7 @@ function renderDetail(){
             <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:${rqiC(r)}">${r}%</span>
           </div>
           <div class="adopt-row"><div class="adopt-label">Tỉ lệ áp dụng % <span style="font-size:10px;color:var(--text3)">(nhập sau khi bàn giao)</span></div>
-            <input class="adopt-input" type="number" min="0" max="100" value="${adopt}" onchange="tAdopt(this.value)"/><span style="font-size:11px;color:var(--text3)">%</span>
+            <input class="adopt-input" type="number" min="0" max="100" value="${adopt}" onchange="tAdopt(this.value)"${canEdit?'':' disabled'}/><span style="font-size:11px;color:var(--text3)">%</span>
           </div>
         </div>
       </div>
@@ -696,15 +748,15 @@ function renderDetail(){
       </div>
 
       <div class="panel full-col"><div class="panel-title">Ghi chú nghiên cứu <span class="ptl"></span></div>
-        <textarea class="notes-ta" placeholder="Ghi chú, quan sát, điểm tắc nghẽ n, bước tiếp theo..." onchange="tNotes(this.value)">${p.notes||''}</textarea></div>
+        <textarea class="notes-ta" placeholder="Ghi chú, quan sát, điểm tắc nghẽ n, bước tiếp theo..." onchange="tNotes(this.value)"${canEdit?'':' disabled'}>${p.notes||''}</textarea></div>
 
       <div class="panel full-col"><div class="panel-title">Đánh giá & Bình luận <span class="ptl"></span><span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${(p.comments||[]).length} comments</span></div>
         <div style="margin-bottom:12px">${commH||'<div style="font-size:12px;color:var(--text3);padding:8px 0 10px">Chưa có comment. Thêm đánh giá hoặc gắn cờ vấn đề bên dưới.</div>'}</div>
         <div class="c-input-row">
-          <select class="c-type-sel" id="c-type"><option value="note">Ghi chú</option><option value="review">Đánh giá</option><option value="flag">Gắn cờ vấn đề</option></select>
-          <select class="c-type-sel" id="c-member"><option value="">Anonymous</option>${mOpts}</select>
-          <textarea class="c-ta" id="c-ta" placeholder="Thêm đánh giá, quan sát, hoặc gắn cờ vấn đề..."></textarea>
-          <button class="btn btn-primary btn-sm" style="align-self:flex-end" onclick="addComment()">Send</button>
+          <select class="c-type-sel" id="c-type"${canEdit?'':' disabled'}><option value="note">Ghi chú</option><option value="review">Đánh giá</option><option value="flag">Gắn cờ vấn đề</option></select>
+          <select class="c-type-sel" id="c-member"${canEdit?'':' disabled'}><option value="">Anonymous</option>${mOpts}</select>
+          <textarea class="c-ta" id="c-ta" placeholder="Thêm đánh giá, quan sát, hoặc gắn cờ vấn đề..."${canEdit?'':' disabled'}></textarea>
+          <button class="btn btn-primary btn-sm" style="align-self:flex-end" onclick="addComment()"${canEdit?'':' disabled'}>Send</button>
         </div>
       </div>
     </div>
@@ -715,15 +767,16 @@ function renderDetail(){
   renderSidebar();
 }
 
-function tDod(id){const p=S.cur;if(!p)return;p.dodChecked=p.dodChecked||[];const i=p.dodChecked.indexOf(id);if(i>-1)p.dodChecked.splice(i,1);else p.dodChecked.push(id);markDetailDirty();renderDetail()}
-function tStar(qid,s){const p=S.cur;if(!p)return;p.qualRatings=p.qualRatings||{};p.qualRatings[qid]=s;markDetailDirty();renderDetail()}
-function tGate(gid){const p=S.cur;if(!p)return;p.gatesPassed=p.gatesPassed||[];p.gateDates=p.gateDates||{};const i=p.gatesPassed.indexOf(gid);if(i>-1){p.gatesPassed.splice(i,1);delete p.gateDates[gid]}else{p.gatesPassed.push(gid);p.gateDates[gid]=new Date().toLocaleDateString('vi-VN')};markDetailDirty();renderDetail()}
-function tAdopt(v){const p=S.cur;if(!p)return;p.adoptionRate=Math.max(0,Math.min(100,parseInt(v)||0));markDetailDirty();renderDetail()}
-function tNotes(v){const p=S.cur;if(!p)return;p.notes=v;markDetailDirty()}
-function updStatus(v){const p=S.cur;if(!p)return;p.status=v;markDetailDirty();renderSidebar()}
-function updOwner(v){const p=S.cur;if(!p)return;p.ownerId=v;markDetailDirty();renderSidebar()}
+function tDod(id){const p=S.cur;if(!canEditProject(p))return;p.dodChecked=p.dodChecked||[];const i=p.dodChecked.indexOf(id);if(i>-1)p.dodChecked.splice(i,1);else p.dodChecked.push(id);markDetailDirty();renderDetail()}
+function tStar(qid,s){const p=S.cur;if(!canEditProject(p))return;p.qualRatings=p.qualRatings||{};p.qualRatings[qid]=s;markDetailDirty();renderDetail()}
+function tGate(gid){const p=S.cur;if(!canEditProject(p))return;p.gatesPassed=p.gatesPassed||[];p.gateDates=p.gateDates||{};const i=p.gatesPassed.indexOf(gid);if(i>-1){p.gatesPassed.splice(i,1);delete p.gateDates[gid]}else{p.gatesPassed.push(gid);p.gateDates[gid]=new Date().toLocaleDateString('vi-VN')};markDetailDirty();renderDetail()}
+function tAdopt(v){const p=S.cur;if(!canEditProject(p))return;p.adoptionRate=Math.max(0,Math.min(100,parseInt(v)||0));markDetailDirty();renderDetail()}
+function tNotes(v){const p=S.cur;if(!canEditProject(p))return;p.notes=v;markDetailDirty()}
+function updStatus(v){const p=S.cur;if(!canEditProject(p))return;p.status=v;markDetailDirty();renderSidebar()}
+function updOwner(v){const p=S.cur;if(!canEditProject(p))return;p.ownerId=v;markDetailDirty();renderSidebar()}
 function addComment(){
   const p=S.cur;if(!p)return;
+  if(!canEditProject(p)) return;
   const text=document.getElementById('c-ta')?.value?.trim();if(!text)return;
   p.comments=p.comments||[];
   p.comments.push({id:'c'+Date.now(),text,type:document.getElementById('c-type')?.value||'note',memberId:document.getElementById('c-member')?.value||'',createdAt:new Date().toISOString()});
@@ -738,7 +791,7 @@ function delProject(){
 function openNew(){
   document.getElementById('fn-name').value='';document.getElementById('fn-role').value='uiux';
   document.querySelectorAll('input[name="fn-role-radio"]').forEach(r=>r.checked = r.value === 'uiux');
-  document.getElementById('fn-status').value='active';document.getElementById('fn-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('fn-status').value='open';document.getElementById('fn-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('fn-obj').value='';syncGroups();
   document.getElementById('fn-owner').innerHTML='<option value="">— Unassigned —</option>'+S.members.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
   document.getElementById('modal-new').classList.add('open');
@@ -754,8 +807,12 @@ function setFnRole(roleType){
 }
 function createProject(){
   const name=document.getElementById('fn-name').value.trim();if(!name){document.getElementById('fn-name').focus();return}
-  const p={id:'p'+Date.now(),name,roleType:document.getElementById('fn-role').value,groupId:document.getElementById('fn-group').value,status:document.getElementById('fn-status').value,startDate:document.getElementById('fn-date').value,ownerId:document.getElementById('fn-owner').value,objective:document.getElementById('fn-obj').value.trim(),dodChecked:[],qualRatings:{},gatesPassed:[],gateDates:{},adoptionRate:0,notes:'',comments:[],createdAt:new Date().toISOString()};
-  S.projects.unshift(p);save();closeModals();S.cur=p;showDetail(p.id);
+  const p={id:'p'+Date.now(),pending:true,reviewUpdateCount:0,name,roleType:document.getElementById('fn-role').value,groupId:document.getElementById('fn-group').value,status:document.getElementById('fn-status').value,startDate:document.getElementById('fn-date').value,ownerId:document.getElementById('fn-owner').value,objective:document.getElementById('fn-obj').value.trim(),dodChecked:[],qualRatings:{},gatesPassed:[],gateDates:{},adoptionRate:0,notes:'',comments:[],createdAt:new Date().toISOString()};
+  S.projects.unshift(p);
+  closeModals();
+  S.cur=p;
+  _detailDirty=true;
+  showDetail(p.id);
 }
 
 function openMembers(){renderMembersModal();document.getElementById('modal-members').classList.add('open')}
@@ -1065,7 +1122,7 @@ function renderGlossary(activeGroupId, activeRoleType) {
 
   document.getElementById('glossary-content').innerHTML = `
     <div style="margin-bottom:20px;display:flex;align-items:center;gap:10px">
-      <button class="btn btn-ghost btn-sm" onclick="history.back();if(S.cur)showDetail(S.cur.id)">← Quay lại</button>
+      <button class="btn btn-ghost btn-sm" onclick="history.back();if(S.cur)showDetail(S.cur.id)">${ICON_CHEVRON_LEFT}Quay lại</button>
       <div>
         <div style="font-family:var(--head);font-size:20px;font-weight:700">Giải nghĩa DoD</div>
         <div style="font-size:14px;color:var(--text2);margin-top:2px">Giải nghĩa chi tiết từng tiêu chí Definition of Done</div>
